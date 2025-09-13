@@ -604,14 +604,27 @@
     }
 
     // 曲を再生
-    function playTrack(index) {
-      currentIndex = index;
-      audio.src = tracks[index].url;
-      audio.play();
-      isPlaying = true;
-      miniTitle.textContent = `${tracks[index].title} - ${tracks[index].artist}`;
-      playBtn.textContent = "⏸";
-    }
+  function playTrack(index) {
+  currentIndex = index;
+
+  // いったん止めてリセット
+  audio.pause();
+  audio.currentTime = 0;
+
+  // 新しい曲を読み込み
+  audio.src = tracks[index].url;
+  audio.load();
+
+  // 再生開始
+  audio.play().then(() => {
+    isPlaying = true;
+    updateMiniTitle(tracks[index].title, tracks[index].artist);
+    playBtn.textContent = "⏸";
+  }).catch(err => {
+    console.error("再生エラー:", err);
+  });
+}
+
 
     function togglePlay() {
       if (isPlaying) {
@@ -779,17 +792,6 @@
     miniTitle.textContent = text;
   }
 }
-
-
-    // 🎵 playTrack 内で呼ぶように修正
-    function playTrack(index) {
-      currentIndex = index;
-      audio.src = tracks[index].url;
-      audio.play();
-      isPlaying = true;
-      updateMiniTitle(tracks[index].title, tracks[index].artist); // ←ここで呼び出す
-      playBtn.textContent = "⏸";
-    }
   </script>
 </body>
 </html>
