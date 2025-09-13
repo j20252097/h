@@ -232,6 +232,12 @@
       .calc-display { font-size: 1.5rem; }
       #mini-player { flex-direction: column; align-items: flex-start; }
     }
+    .active-btn {
+      color: #1db954 !important; /* 緑 */
+    }
+    .inactive-btn {
+      color: #777 !important;   /* 灰色 */
+    }
   </style>
 </head>
 <body>
@@ -326,16 +332,16 @@
     <button class="spotify-btn" onclick="showSection('home')">機能選択に戻る</button>
   </section>
 
-  <!-- ミニプレイヤー -->
-  <div id="mini-player">
-    <img src="https://raw.githubusercontent.com/j20252097/h/refs/heads/main/1718374862947-Di6UorBBZD.webp" alt="art">
-    <div id="mini-title">再生中なし</div>
-    <button onclick="prevTrack()">⏮</button>
-    <button onclick="togglePlay()">▶️</button>
-    <button onclick="nextTrack()">⏭</button>
-    <button onclick="toggleMode()">🔀</button>
-    <button onclick="toggleRepeat()">🔁</button>
-  </div>
+<div id="mini-player">
+  <img src="https://raw.githubusercontent.com/j20252097/h/refs/heads/main/1718374862947-Di6UorBBZD.webp" alt="art">
+  <div id="mini-title">再生中なし</div>
+  <button id="prev-btn" onclick="prevTrack()">⏮</button>
+  <button id="play-btn" onclick="togglePlay()">▶️</button>
+  <button id="next-btn" onclick="nextTrack()">⏭</button>
+  <button id="shuffle-btn" class="inactive-btn" onclick="toggleMode()">🔀</button>
+  <button id="repeat-btn" class="inactive-btn" onclick="toggleRepeat()">🔁</button>
+  <button id="favmode-btn" class="inactive-btn" onclick="toggleFavMode()">⭐</button>
+</div>
 
   <audio id="audio"></audio>
 
@@ -447,15 +453,16 @@
         };
         reader.readAsDataURL(file);
       } else {
-              if (editIndex !== null) {
+        if (editIndex !== null) {
           memos[editIndex] = { text, image: memos[editIndex].image };
           editIndex = null;
         } else {
-          memos.unshift({ text, image: null }); // 新しいのを上に追加
+          memos.unshift({ text, image: null });
         }
         localStorage.setItem("memos", JSON.stringify(memos));
         renderMemos();
       }
+     
       document.getElementById("memo-text").value = "";
       document.getElementById("memo-image").value = "";
     }
@@ -506,132 +513,186 @@
     window.addEventListener("DOMContentLoaded", () => {
       renderMemos();
     });
-  // === 音楽プレイヤー ===
-  let tracks = [];
-  let currentIndex = -1;
-  let isPlaying = false;
-  let isShuffle = false;   // 順次 ↔ ランダム
-  let isRepeat = false;    // 🔁
-  let favorites = new Set();
 
-  const audio = document.getElementById("audio");
-  const miniTitle = document.getElementById("mini-title");
-  const trackList = document.getElementById("track-list");
-  const searchBox = document.getElementById("track-search");
+    // === 音楽プレイヤー ===
+    let tracks = [];
+    let currentIndex = -1;
+    let isPlaying = false;
+    let isShuffle = false;   // 順次 ↔ ランダム
+    let isRepeat = false;    // 🔁
+    let favorites = new Set();
+    let isFavMode = false;   // ⭐お気に入りモード
 
-  // tracks.json を読み込む
-  async function loadTracks() {
-    try {
-      const res = await fetch("tracks.json");
-      tracks = await res.json();
-      renderTrackList();
-    } catch (e) {
-      console.error("曲リスト読み込みエラー", e);
-    }
-  }
+    const audio = document.getElementById("audio");
+    const miniTitle = document.getElementById("mini-title");
+    const trackList = document.getElementById("track-list");
+    const searchBox = document.getElementById("track-search");
+    const playBtn = document.getElementById("play-btn");
 
-  // 曲一覧を表示
-  function renderTrackList(filter = "") {
-    trackList.innerHTML = "";
-    tracks
-      .filter(t => t.title.toLowerCase().includes(filter.toLowerCase()) || 
-                   t.artist.toLowerCase().includes(filter.toLowerCase()))
-      .forEach((track, i) => {
-        const li = document.createElement("li");
-        li.innerHTML = `
-          <span>${track.title} - ${track.artist}</span>
-          <span>
-            <button onclick="toggleFavorite(${i});event.stopPropagation();">
-              ${favorites.has(i) ? "⭐" : "☆"}
-            </button>
-          </span>
-        `;
-        li.onclick = () => playTrack(i);
-        trackList.appendChild(li);
-      });
-  }
-
-  // 曲を再生
-  function playTrack(index) {
-    currentIndex = index;
-    audio.src = tracks[index].url;
-    audio.play();
-    isPlaying = true;
-    miniTitle.textContent = `${tracks[index].title} - ${tracks[index].artist}`;
-    document.querySelector("#mini-player button:nth-child(3)").textContent = "⏸";
-  }
-
-  function togglePlay() {
-    if (isPlaying) {
-      audio.pause();
-      isPlaying = false;
-      document.querySelector("#mini-player button:nth-child(3)").textContent = "▶️";
-    } else {
-      if (currentIndex === -1 && tracks.length > 0) {
-        playTrack(0);
-      } else {
-        audio.play();
+    // tracks.json を読み込む
+    async function loadTracks() {
+      try {
+        const res = await fetch("tracks.json");
+        tracks = await res.json();
+        renderTrackList();
+      } catch (e) {
+        console.error("曲リスト読み込みエラー", e);
       }
-      isPlaying = true;
-      document.querySelector("#mini-player button:nth-child(3)").textContent = "⏸";
     }
-  }
 
-  function prevTrack() {
-    if (tracks.length === 0) return;
-    if (isShuffle) {
-      playTrack(Math.floor(Math.random() * tracks.length));
-    } else {
-      currentIndex = (currentIndex - 1 + tracks.length) % tracks.length;
-      playTrack(currentIndex);
+    // 曲一覧を表示
+    function renderTrackList(filter = "") {
+      trackList.innerHTML = "";
+      tracks
+        .filter((t, i) => {
+          if (isFavMode && !favorites.has(i)) return false;
+          return (
+            t.title.toLowerCase().includes(filter.toLowerCase()) ||
+            t.artist.toLowerCase().includes(filter.toLowerCase())
+          );
+        })
+        .forEach((track, i) => {
+          const li = document.createElement("li");
+          li.innerHTML = `
+            <span>${track.title} - ${track.artist}</span>
+            <span>
+              <button onclick="toggleFavorite(${i});event.stopPropagation();">
+                ${favorites.has(i) ? "⭐" : "☆"}
+              </button>
+            </span>
+          `;
+          li.onclick = () => playTrack(i);
+          trackList.appendChild(li);
+        });
     }
-  }
 
-  function nextTrack() {
-    if (tracks.length === 0) return;
-    if (isShuffle) {
-      playTrack(Math.floor(Math.random() * tracks.length));
-    } else {
-      currentIndex = (currentIndex + 1) % tracks.length;
-      playTrack(currentIndex);
-    }
-  }
-
-  function toggleMode() {
-    isShuffle = !isShuffle;
-    alert(isShuffle ? "ランダム再生 ON" : "順次再生 ON");
-  }
-
-  function toggleRepeat() {
-    isRepeat = !isRepeat;
-    audio.loop = isRepeat;
-    alert(isRepeat ? "リピート再生 ON" : "リピート再生 OFF");
-  }
-
-  function toggleFavorite(index) {
-    if (favorites.has(index)) {
-      favorites.delete(index);
-    } else {
-      favorites.add(index);
-    }
-    renderTrackList(searchBox.value);
-  }
-
-  // 曲終了時の処理
-  audio.addEventListener("ended", () => {
-    if (isRepeat) {
+    // 曲を再生
+    function playTrack(index) {
+      currentIndex = index;
+      audio.src = tracks[index].url;
       audio.play();
-    } else {
-      nextTrack();
+      isPlaying = true;
+      miniTitle.textContent = `${tracks[index].title} - ${tracks[index].artist}`;
+      playBtn.textContent = "⏸";
     }
-  });
 
-  // 検索イベント
-  searchBox.addEventListener("input", (e) => {
-    renderTrackList(e.target.value);
-  });
+    function togglePlay() {
+      if (isPlaying) {
+        audio.pause();
+        isPlaying = false;
+        playBtn.textContent = "▶️";
+      } else {
+        if (currentIndex === -1 && tracks.length > 0) {
+          playTrack(0);
+        } else {
+          audio.play();
+        }
+        isPlaying = true;
+        playBtn.textContent = "⏸";
+      }
+    }
 
-  window.addEventListener("DOMContentLoaded", loadTracks);
+    function prevTrack() {
+      if (tracks.length === 0) return;
+      let list = getCurrentTrackList();
+      if (list.length === 0) return;
+
+      if (isShuffle) {
+        playTrack(list[Math.floor(Math.random() * list.length)]);
+      } else {
+        let idx = list.indexOf(currentIndex);
+        idx = (idx - 1 + list.length) % list.length;
+        playTrack(list[idx]);
+      }
+    }
+
+    function nextTrack() {
+      if (tracks.length === 0) return;
+      let list = getCurrentTrackList();
+      if (list.length === 0) return;
+
+      if (isShuffle) {
+        playTrack(list[Math.floor(Math.random() * list.length)]);
+      } else {
+        let idx = list.indexOf(currentIndex);
+        idx = (idx + 1) % list.length;
+        playTrack(list[idx]);
+      }
+    }
+
+    function toggleMode() {
+      isShuffle = !isShuffle;
+      const btn = document.getElementById("shuffle-btn");
+      if (isShuffle) {
+        btn.textContent = "🔀";
+        btn.classList.add("active-btn");
+        btn.classList.remove("inactive-btn");
+      } else {
+        btn.textContent = "➡️";
+        btn.classList.add("inactive-btn");
+        btn.classList.remove("active-btn");
+      }
+    }
+
+    function toggleRepeat() {
+      isRepeat = !isRepeat;
+      audio.loop = isRepeat;
+      const btn = document.getElementById("repeat-btn");
+      if (isRepeat) {
+        btn.classList.add("active-btn");
+        btn.classList.remove("inactive-btn");
+      } else {
+        btn.classList.add("inactive-btn");
+        btn.classList.remove("active-btn");
+      }
+    }
+
+    function toggleFavorite(index) {
+      if (favorites.has(index)) {
+        favorites.delete(index);
+      } else {
+        favorites.add(index);
+      }
+      renderTrackList(searchBox.value);
+    }
+
+    function toggleFavMode() {
+      isFavMode = !isFavMode;
+      const btn = document.getElementById("favmode-btn");
+      if (isFavMode) {
+        btn.classList.add("active-btn");
+        btn.classList.remove("inactive-btn");
+      } else {
+        btn.classList.add("inactive-btn");
+        btn.classList.remove("active-btn");
+      }
+      renderTrackList(searchBox.value);
+    }
+
+    // 現在のプレイリスト（通常 or ⭐）
+    function getCurrentTrackList() {
+      let list = [];
+      tracks.forEach((_, i) => {
+        if (!isFavMode || favorites.has(i)) list.push(i);
+      });
+      return list;
+    }
+
+    // 曲終了時の処理
+    audio.addEventListener("ended", () => {
+      if (isRepeat) {
+        audio.play();
+      } else {
+        nextTrack();
+      }
+    });
+
+    // 検索イベント
+    searchBox.addEventListener("input", (e) => {
+      renderTrackList(e.target.value);
+    });
+
+    window.addEventListener("DOMContentLoaded", loadTracks);
   </script>
 </body>
 </html>
