@@ -28,11 +28,11 @@
       border: none;
       color: #fff;
       padding: 1rem 2rem;
-      font-size: 1.2rem;
+      font-size: 1.1rem;
       border-radius: 50px;
       cursor: pointer;
       transition: background 0.3s ease;
-      margin: 0.5rem;
+      margin: 0.3rem;
     }
     .spotify-btn:hover {
       background-color: #17a74a;
@@ -86,9 +86,7 @@
       font-weight: bold;
       animation: blink 1.5s infinite;
     }
-    @keyframes blink {
-      50% { opacity: 0.5; }
-    }
+    @keyframes blink { 50% { opacity: 0.5; } }
 
     /* 電卓 */
     .calculator {
@@ -139,26 +137,25 @@
     #memo textarea {
       width: 90%;
       max-width: 600px;
-      padding: 0.8rem;
+      padding: 0.6rem;
       border-radius: 8px;
-      border: none;
-      outline: none;
-      resize: vertical;
-      margin-bottom: 1rem;
+      border: 1px solid #1db954;
+      background: #000;
+      color: #fff;
     }
     #memo-list div {
       border: 1px solid #1db954;
-      border-radius: 8px;
       padding: 10px;
       margin: 10px auto;
+      border-radius: 8px;
       background: #181818;
       max-width: 600px;
       text-align: left;
     }
     #memo-list img {
       max-width: 100%;
-      border-radius: 6px;
       margin-top: 8px;
+      border-radius: 6px;
     }
 
     @media (max-width: 768px) {
@@ -211,32 +208,26 @@
     <h2>関数電卓</h2>
     <div class="calculator">
       <div class="calc-display" id="calc-display" contenteditable="true">0</div>
-
       <button class="calc-btn operator" onclick="clearDisplay()">AC</button>
       <button class="calc-btn operator" onclick="deleteChar()">⌫</button>
       <button class="calc-btn operator" onclick="square()">x²</button>
       <button class="calc-btn operator" onclick="insert('/')">÷</button>
-
       <button class="calc-btn" onclick="insert('7')">7</button>
       <button class="calc-btn" onclick="insert('8')">8</button>
       <button class="calc-btn" onclick="insert('9')">9</button>
       <button class="calc-btn operator" onclick="insert('*')">×</button>
-
       <button class="calc-btn" onclick="insert('4')">4</button>
       <button class="calc-btn" onclick="insert('5')">5</button>
       <button class="calc-btn" onclick="insert('6')">6</button>
       <button class="calc-btn operator" onclick="insert('-')">-</button>
-
       <button class="calc-btn" onclick="insert('1')">1</button>
       <button class="calc-btn" onclick="insert('2')">2</button>
       <button class="calc-btn" onclick="insert('3')">3</button>
       <button class="calc-btn operator" onclick="insert('+')">+</button>
-
       <button class="calc-btn" onclick="insert('0')">0</button>
       <button class="calc-btn" onclick="insert('.')">.</button>
       <button class="calc-btn operator" onclick="calculate()">=</button>
       <button class="calc-btn operator" onclick="insert('sqrt()')">√</button>
-
       <button class="calc-btn operator" onclick="insert('sin()')">sin</button>
       <button class="calc-btn operator" onclick="insert('cos()')">cos</button>
       <button class="calc-btn operator" onclick="insert('tan()')">tan</button>
@@ -251,13 +242,12 @@
     <textarea id="memo-text" placeholder="ここにメモを書いてください..." rows="4"></textarea><br>
     <input type="file" id="memo-image" accept="image/*"><br><br>
     <button class="spotify-btn" onclick="saveMemo()">保存</button>
-    <button class="spotify-btn" onclick="shareMemo()">URLで共有（テキストのみ）</button>
     <div id="memo-list"></div>
     <button class="spotify-btn" onclick="showSection('home')">機能選択に戻る</button>
   </section>
 
   <script>
-    // === セクション切り替え ===
+    // --- 共通セクション切り替え ---
     function showSection(id) {
       document.querySelectorAll("section").forEach(sec => sec.classList.remove("active"));
       if (id === "home") {
@@ -269,7 +259,7 @@
       }
     }
 
-    // === 画像生成 ===
+    // --- 画像生成 ---
     async function generateImage() {
       const category = document.getElementById("category").value;
       const img = document.getElementById("generated-img");
@@ -298,11 +288,10 @@
       }
     }
 
-    // === 電卓 ===
+    // --- 電卓 ---
     function insert(val) {
       const display = document.getElementById("calc-display");
       if (display.innerText === "0") display.innerText = "";
-
       if (val.includes("()")) {
         display.innerText += val;
         const range = document.createRange();
@@ -342,14 +331,13 @@
       }
     }
 
-    // === メモ機能 ===
+    // --- メモ ---
     let memos = JSON.parse(localStorage.getItem("memos") || "[]");
     let editIndex = null;
 
     function saveMemo() {
       const text = document.getElementById("memo-text").value;
       const file = document.getElementById("memo-image").files[0];
-
       if (!text && !file) return alert("メモ内容が空です");
 
       if (file) {
@@ -359,7 +347,7 @@
             memos[editIndex] = { text, image: reader.result };
             editIndex = null;
           } else {
-            memos.unshift({ text, image: reader.result }); // 新しいメモを上に
+            memos.unshift({ text, image: reader.result }); // 新しいのを上に追加
           }
           localStorage.setItem("memos", JSON.stringify(memos));
           renderMemos();
@@ -370,7 +358,7 @@
           memos[editIndex] = { text, image: memos[editIndex].image };
           editIndex = null;
         } else {
-          memos.unshift({ text, image: null }); // 新しいメモを上に
+          memos.unshift({ text, image: null }); // 新しいのを上に追加
         }
         localStorage.setItem("memos", JSON.stringify(memos));
         renderMemos();
@@ -389,6 +377,7 @@
           ${memo.image ? `<img src="${memo.image}">` : ""}
           <div style="margin-top:8px;">
             <button class="spotify-btn" style="padding:0.3rem 1rem; font-size:0.9rem;" onclick="editMemo(${i})">✏️ 編集</button>
+            <button class="spotify-btn" style="padding:0.3rem 1rem; font-size:0.9rem;" onclick="shareMemo(${i})">🔗 共有</button>
             <button class="spotify-btn" style="padding:0.3rem 1rem; font-size:0.9rem; background:#b91d1d;" onclick="deleteMemo(${i})">🗑️ 削除</button>
           </div>
         `;
@@ -409,22 +398,26 @@
       renderMemos();
     }
 
-    function shareMemo() {
-      const text = document.getElementById("memo-text").value;
-      if (!text) return alert("共有するテキストを入力してください");
-      const encoded = encodeURIComponent(btoa(text));
-      const url = `${location.origin}${location.pathname}?memo=${encoded}`;
+    function shareMemo(index) {
+      const memo = memos[index];
+      const encoded = encodeURIComponent(btoa(JSON.stringify(memo)));
+      const url = `${location.origin}${location.pathname}?shared=${encoded}`;
       navigator.clipboard.writeText(url).then(() => {
-        alert("共有URLをコピーしました:\n" + url);
+        alert("このメモを共有URLとしてコピーしました:\n" + url);
       });
     }
 
     window.addEventListener("DOMContentLoaded", () => {
       const params = new URLSearchParams(location.search);
-      if (params.has("memo")) {
-        const decoded = atob(decodeURIComponent(params.get("memo")));
-        document.getElementById("memo-text").value = decoded;
-        alert("共有されたメモを読み込みました:\n" + decoded);
+      if (params.has("shared")) {
+        try {
+          const memo = JSON.parse(atob(decodeURIComponent(params.get("shared"))));
+          memos.unshift(memo);
+          localStorage.setItem("memos", JSON.stringify(memos));
+          alert("共有されたメモを読み込みました！");
+        } catch {
+          alert("共有メモの読み込みに失敗しました。");
+        }
       }
       renderMemos();
     });
