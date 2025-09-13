@@ -195,71 +195,78 @@
       color: gold;
       margin-left: 8px;
     }
-    /* ミニプレイヤー */
-  #mini-player {
-    position: fixed;
-    bottom: 10px;
-    right: 10px;
-    background: #282828;
-    border-radius: 12px;
-    padding: 10px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    box-shadow: 0 0 10px rgba(0,0,0,0.6);
-  }
-  #mini-player img {
-    width: 40px;
-    height: 40px;
-    border-radius: 6px;
-  }
-  #mini-player button {
-    background: none;
-    border: none;
-    color: #1db954;
-    cursor: pointer;
-    font-size: 1.2rem;
-  }
+/* 🎶 ミニプレイヤー */
+#mini-player {
+  position: fixed;
+  bottom: 8px;
+  right: 8px;
+  background: rgba(40, 40, 40, 0.85); /* 半透明 */
+  backdrop-filter: blur(6px);          /* ガラス風 */
+  border-radius: 10px;
+  padding: 6px 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 0 8px rgba(0,0,0,0.6);
+  z-index: 1000;
+}
 
-  /* 🎵 曲名スクロール */
-  #mini-title {
-    position: relative;
-    overflow: hidden;
-    white-space: nowrap;
-    max-width: 200px; /* ここは必要に応じて調整 */
-  }
+#mini-player img {
+  width: 30px;
+  height: 30px;
+  border-radius: 4px;
+}
 
-  #mini-title span {
-    display: inline-block;
-    padding-left: 100%; /* 最初は外から流れてくる感じ */
-    animation: scroll-title linear infinite;
-  }
+#mini-player button {
+  background: none;
+  border: none;
+  color: #1db954;
+  cursor: pointer;
+  font-size: 1rem;
+  padding: 2px;
+}
 
-  @keyframes scroll-title {
-    0% { transform: translateX(0); }
-    40% { transform: translateX(-100%); } /* 左に流す */
-    50% { transform: translateX(-100%); } /* ←ここで1秒待機 */
-    90% { transform: translateX(0); }     /* 戻ってくる */
-    100% { transform: translateX(0); }    /* ←戻った後も1秒待機 */
-  }
+/* 🎵 曲名スクロール（右→左に統一） */
+#mini-title {
+  position: relative;
+  overflow: hidden;
+  white-space: nowrap;
+  max-width: 150px; /* コンパクトに */
+  font-size: 0.9rem;
+  color: #fff;
+}
 
-  @media (max-width: 768px) {
-    h1, h2 { font-size: 1.4rem; }
-    .spotify-btn {
-      width: 80%;
-      font-size: 1rem;
-      padding: 0.8rem 1rem;
-    }
-    .frame { max-width: 95%; }
-    .calc-display { font-size: 1.5rem; }
-  }
+#mini-title span {
+  display: inline-block;
+  padding-left: 100%;
+  animation: scroll-title linear infinite;
+}
 
-  .active-btn {
-    color: #1db954 !important; /* 緑 */
+@keyframes scroll-title {
+  from { transform: translateX(100%); }  /* 右から */
+  to   { transform: translateX(-100%); } /* 左へ */
+}
+
+/* 📱 スマホ対応 */
+@media (max-width: 768px) {
+  h1, h2 { font-size: 1.4rem; }
+  .spotify-btn {
+    width: 80%;
+    font-size: 1rem;
+    padding: 0.8rem 1rem;
   }
-  .inactive-btn {
-    color: #777 !important;   /* 灰色 */
-  }
+  .frame { max-width: 95%; }
+  .calc-display { font-size: 1.5rem; }
+  #mini-title { max-width: 120px; } /* スマホ用にさらに縮小 */
+}
+
+/* 再生ボタンの状態 */
+.active-btn {
+  color: #1db954 !important; /* 緑 */
+}
+.inactive-btn {
+  color: #777 !important;   /* 灰色 */
+}
   </style>
 </head>
 <body>
@@ -751,19 +758,20 @@
 
     window.addEventListener("DOMContentLoaded", loadTracks);
       // === 🎵 曲名スクロール関数 ===
-    function updateMiniTitle(title, artist) {
-      const miniTitle = document.getElementById("mini-title");
-      const text = `${title} - ${artist}`;
+   function updateMiniTitle(title, artist) {
+  const miniTitle = document.getElementById("mini-title");
+  const text = `${title} - ${artist}`;
 
-      if (text.length > 7) {
-        miniTitle.innerHTML = `<span>${text}</span>`;
-        const span = miniTitle.querySelector("span");
-        const duration = Math.max(6, text.length / 2); // 長さに応じてスクロール速度調整
-        span.style.animationDuration = `${duration}s`;
-      } else {
-        miniTitle.textContent = text;
-      }
-    }
+  if (text.length > 7) {
+    miniTitle.innerHTML = `<span>${text}</span>`;
+    const span = miniTitle.querySelector("span");
+    const duration = Math.max(8, text.length / 1.5); // ゆっくり流す
+    span.style.animationDuration = `${duration}s`;
+  } else {
+    miniTitle.textContent = text;
+  }
+}
+
 
     // 🎵 playTrack 内で呼ぶように修正
     function playTrack(index) {
