@@ -1,44 +1,176 @@
-<section id="image-generator" style="margin-top:2rem;">
-  <h2>画像生成</h2>
-  <div class="controls">
-    <select id="category">
-      <option value="hentai">Hentai</option>
-      <option value="boobs">Boobs</option>
-      <option value="paizuri">Paizuri</option>
-      <option value="anal">Anal</option>
-      <option value="pussy">Pussy</option>
-      <option value="gonewild">Gonewild</option>
-      <option value="ass">Ass</option>
-      <option value="4k">4K</option>
-      <option value="hanal">Hentai Anal</option>
-      <option value="pgif">Hentai GIF</option>
-    </select>
-    <button onclick="generateImage()">生成</button>
-  </div>
-  <div id="image-result" style="margin-top:1rem;">
-    <img id="generated-img" src="" alt="生成画像" style="max-width:100%; border-radius:8px; display:none;">
-  </div>
-</section>
-
-<script>
-async function generateImage() {
-  const category = document.getElementById("category").value;
-  const resultBox = document.getElementById("image-result");
-  const img = document.getElementById("generated-img");
-
-  try {
-    const res = await fetch(`https://nekobot.xyz/api/image?type=${category}`);
-    const data = await res.json();
-
-    if (data && data.message) {
-      img.src = data.message;
-      img.style.display = "block";
-    } else {
-      resultBox.innerHTML = "<p>画像を取得できませんでした。</p>";
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>R-18 Generator</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: "Segoe UI", sans-serif;
+      background-color: #121212;
+      color: #fff;
+      text-align: center;
     }
-  } catch (err) {
-    console.error("画像取得エラー:", err);
-    resultBox.innerHTML = "<p>エラーが発生しました。</p>";
-  }
-}
-</script>
+
+    header {
+      padding: 2rem 1rem;
+    }
+
+    h1, h2 {
+      color: #1db954;
+      margin-bottom: 1rem;
+    }
+
+    /* Spotify風ボタン */
+    .spotify-btn {
+      background-color: #1db954;
+      border: none;
+      color: #fff;
+      padding: 1rem 2rem;
+      font-size: 1.2rem;
+      border-radius: 50px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+      margin: 0.5rem;
+    }
+    .spotify-btn:hover {
+      background-color: #17a74a;
+    }
+
+    /* セクション表示切替 */
+    section {
+      display: none;
+      margin: 2rem auto;
+      max-width: 900px;
+      padding: 1rem;
+    }
+    section.active {
+      display: block;
+    }
+
+    /* セレクトボックスと生成ボタン */
+    select, button {
+      padding: 0.5rem;
+      margin: 0.5rem;
+      border-radius: 8px;
+      border: none;
+      font-size: 1rem;
+    }
+
+    select {
+      background: #282828;
+      color: #fff;
+    }
+
+    #generate-btn {
+      background: #1db954;
+      color: #fff;
+      cursor: pointer;
+      border-radius: 30px;
+      padding: 0.6rem 1.2rem;
+    }
+    #generate-btn:hover {
+      background: #17a74a;
+    }
+
+    /* 額縁スタイル */
+    .frame {
+      margin: 1.5rem auto;
+      padding: 10px;
+      border: 5px solid #1db954;
+      border-radius: 12px;
+      max-width: 90%;
+      background: #000;
+      box-shadow: 0 0 20px rgba(29, 185, 84, 0.5);
+    }
+
+    .frame img {
+      width: 100%;
+      height: auto;
+      max-height: 70vh;
+      object-fit: contain;
+      border-radius: 8px;
+    }
+
+    /* レスポンシブ調整 */
+    @media (max-width: 768px) {
+      h1, h2 {
+        font-size: 1.4rem;
+      }
+      .spotify-btn {
+        width: 80%;
+        font-size: 1rem;
+        padding: 0.8rem 1rem;
+      }
+      .frame {
+        max-width: 95%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>機能選択</h1>
+    <button class="spotify-btn" onclick="showSection('image-generator')">画像生成</button>
+  </header>
+
+  <!-- === 画像生成機能エリア === -->
+  <section id="image-generator">
+    <h2>画像生成（R-18）</h2>
+    <div class="controls">
+      <select id="category">
+        <option value="hentai">Hentai</option>
+        <option value="boobs">Boobs</option>
+        <option value="paizuri">Paizuri</option>
+        <option value="anal">Anal</option>
+        <option value="pussy">Pussy</option>
+        <option value="gonewild">Gonewild</option>
+        <option value="ass">Ass</option>
+        <option value="4k">4K</option>
+        <option value="hanal">Hentai Anal</option>
+        <option value="pgif">Hentai GIF</option>
+      </select>
+      <button id="generate-btn" onclick="generateImage()">生成</button>
+    </div>
+    <div class="frame" id="image-frame" style="display:none;">
+      <img id="generated-img" src="" alt="生成画像">
+    </div>
+    <button class="spotify-btn" onclick="showSection('home')">機能選択に戻る</button>
+  </section>
+
+  <script>
+    function showSection(id) {
+      document.querySelectorAll("section").forEach(sec => sec.classList.remove("active"));
+      if (id === "home") {
+        document.querySelector("header").style.display = "block";
+      } else {
+        document.querySelector("header").style.display = "none";
+        document.getElementById(id).classList.add("active");
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    }
+
+    async function generateImage() {
+      const category = document.getElementById("category").value;
+      const img = document.getElementById("generated-img");
+      const frame = document.getElementById("image-frame");
+
+      try {
+        const res = await fetch(`https://nekobot.xyz/api/image?type=${category}`);
+        const data = await res.json();
+
+        if (data && data.message) {
+          img.src = data.message;
+          frame.style.display = "block";
+        } else {
+          frame.innerHTML = "<p>画像を取得できませんでした。</p>";
+        }
+      } catch (err) {
+        console.error("画像取得エラー:", err);
+        frame.innerHTML = "<p>エラーが発生しました。</p>";
+      }
+    }
+  </script>
+</body>
+</html>
