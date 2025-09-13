@@ -48,6 +48,48 @@
       display: block;
     }
 
+    /* 画像生成 */
+    #generate-btn {
+      background: #1db954;
+      color: #fff;
+      cursor: pointer;
+      border-radius: 30px;
+      padding: 0.6rem 1.2rem;
+    }
+    #generate-btn:hover {
+      background: #17a74a;
+    }
+
+    .frame {
+      margin: 1.5rem auto;
+      padding: 10px;
+      border: 5px solid #1db954;
+      border-radius: 12px;
+      max-width: 90%;
+      background: #000;
+      box-shadow: 0 0 20px rgba(29, 185, 84, 0.5);
+      min-height: 200px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .frame img {
+      width: 100%;
+      height: auto;
+      max-height: 70vh;
+      object-fit: contain;
+      border-radius: 8px;
+    }
+    .loading {
+      color: #1db954;
+      font-size: 1.2rem;
+      font-weight: bold;
+      animation: blink 1.5s infinite;
+    }
+    @keyframes blink {
+      50% { opacity: 0.5; }
+    }
+
     /* 電卓 */
     .calculator {
       display: grid;
@@ -96,6 +138,7 @@
         font-size: 1rem;
         padding: 0.8rem 1rem;
       }
+      .frame { max-width: 95%; }
       .calc-display { font-size: 1.5rem; }
     }
   </style>
@@ -103,8 +146,34 @@
 <body>
   <header>
     <h1>Multi Tool</h1>
+    <button class="spotify-btn" onclick="showSection('image-generator')">画像生成</button>
     <button class="spotify-btn" onclick="showSection('calculator')">電卓</button>
   </header>
+
+  <!-- === 画像生成機能エリア === -->
+  <section id="image-generator">
+    <h2>画像生成（R-18）</h2>
+    <div class="controls">
+      <select id="category">
+        <option value="hentai">Hentai</option>
+        <option value="boobs">Boobs</option>
+        <option value="paizuri">Paizuri</option>
+        <option value="anal">Anal</option>
+        <option value="pussy">Pussy</option>
+        <option value="gonewild">Gonewild</option>
+        <option value="ass">Ass</option>
+        <option value="4k">4K</option>
+        <option value="hanal">Hentai Anal</option>
+        <option value="pgif">Hentai GIF</option>
+      </select>
+      <button id="generate-btn" onclick="generateImage()">生成</button>
+    </div>
+    <div class="frame" id="image-frame" style="display:none;">
+      <span class="loading" id="loading-text" style="display:none;">画像生成中...</span>
+      <img id="generated-img" src="" alt="生成画像" style="display:none;">
+    </div>
+    <button class="spotify-btn" onclick="showSection('home')">機能選択に戻る</button>
+  </section>
 
   <!-- === 電卓機能エリア === -->
   <section id="calculator">
@@ -158,7 +227,37 @@
       }
     }
 
-    // 電卓機能
+    // 画像生成
+    async function generateImage() {
+      const category = document.getElementById("category").value;
+      const img = document.getElementById("generated-img");
+      const frame = document.getElementById("image-frame");
+      const loading = document.getElementById("loading-text");
+
+      frame.style.display = "flex";
+      img.style.display = "none";
+      loading.style.display = "block";
+
+      try {
+        const res = await fetch(`https://nekobot.xyz/api/image?type=${category}`);
+        const data = await res.json();
+
+        if (data && data.message) {
+          img.src = data.message;
+          img.onload = () => {
+            loading.style.display = "none";
+            img.style.display = "block";
+          };
+        } else {
+          loading.textContent = "画像を取得できませんでした。";
+        }
+      } catch (err) {
+        console.error("画像取得エラー:", err);
+        loading.textContent = "エラーが発生しました。";
+      }
+    }
+
+    // 電卓
     function insert(val) {
       const display = document.getElementById("calc-display");
       if (display.innerText === "0") display.innerText = "";
