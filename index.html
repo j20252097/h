@@ -551,247 +551,224 @@
       renderMemos();
     });
 
-    // === 音楽プレイヤー ===
-    let tracks = [];
-    let currentIndex = -1;
-    let isPlaying = false;
-    let isShuffle = false;   // 順次 ↔ ランダム
-    let isRepeat = false;    // 🔁
-    let favorites = new Set();
-    let isFavMode = false;   // ⭐お気に入りモード
+  // === 音楽プレイヤー ===
+  let tracks = [];
+  let currentIndex = -1;
+  let isPlaying = false;
+  let isShuffle = false;   // 順次 ↔ ランダム
+  let isRepeat = false;    // 🔁
+  let favorites = new Set();
+  let isFavMode = false;   // ⭐お気に入りモード
 
-    const audio = document.getElementById("audio");
-    const miniTitle = document.getElementById("mini-title");
-    const trackList = document.getElementById("track-list");
-    const searchBox = document.getElementById("track-search");
-    const playBtn = document.getElementById("play-btn");
-
-    // tracks.json を読み込む
-    async function loadTracks() {
-      try {
-        const res = await fetch("tracks.json");
-        tracks = await res.json();
-        renderTrackList();
-      } catch (e) {
-        console.error("曲リスト読み込みエラー", e);
-      }
-    }
-
-    // 曲一覧を表示
-    function renderTrackList(filter = "") {
-      trackList.innerHTML = "";
-      tracks
-        .filter((t, i) => {
-          if (isFavMode && !favorites.has(i)) return false;
-          return (
-            t.title.toLowerCase().includes(filter.toLowerCase()) ||
-            t.artist.toLowerCase().includes(filter.toLowerCase())
-          );
-        })
-        .forEach((track, i) => {
-          const li = document.createElement("li");
-          li.innerHTML = `
-            <span>${track.title} - ${track.artist}</span>
-            <span>
-              <button onclick="toggleFavorite(${i});event.stopPropagation();">
-                ${favorites.has(i) ? "⭐" : "☆"}
-              </button>
-            </span>
-          `;
-          li.onclick = () => playTrack(i);
-          trackList.appendChild(li);
-        });
-    }
-
-    // 曲を再生
-  function playTrack(index) {
-  currentIndex = index;
-
-  // いったん止めてリセット
-  audio.pause();
-  audio.currentTime = 0;
-
-  // 新しい曲を読み込み
-  audio.src = tracks[index].url;
-  audio.load();
-
-  // 再生開始
-  audio.play().then(() => {
-    isPlaying = true;
-    updateMiniTitle(tracks[index].title, tracks[index].artist);
-    playBtn.textContent = "⏸";
-  }).catch(err => {
-    console.error("再生エラー:", err);
-  });
-}
-
-
-    function togglePlay() {
-      if (isPlaying) {
-        audio.pause();
-        isPlaying = false;
-        playBtn.textContent = "▶️";
-      } else {
-        if (currentIndex === -1 && tracks.length > 0) {
-          playTrack(0);
-        } else {
-          audio.play();
-        }
-        isPlaying = true;
-        playBtn.textContent = "⏸";
-      }
-    }
-
-    function prevTrack() {
-      if (tracks.length === 0) return;
-      let list = getCurrentTrackList();
-      if (list.length === 0) return;
-
-      if (isShuffle) {
-        playTrack(list[Math.floor(Math.random() * list.length)]);
-      } else {
-        let idx = list.indexOf(currentIndex);
-        idx = (idx - 1 + list.length) % list.length;
-        playTrack(list[idx]);
-      }
-    }
-
-    function nextTrack() {
-      if (tracks.length === 0) return;
-      let list = getCurrentTrackList();
-      if (list.length === 0) return;
-
-      if (isShuffle) {
-        playTrack(list[Math.floor(Math.random() * list.length)]);
-      } else {
-        let idx = list.indexOf(currentIndex);
-        idx = (idx + 1) % list.length;
-        playTrack(list[idx]);
-      }
-    }
-
-    function toggleMode() {
-      isShuffle = !isShuffle;
-      const btn = document.getElementById("shuffle-btn");
-      if (isShuffle) {
-        btn.textContent = "🔀";
-        btn.classList.add("active-btn");
-        btn.classList.remove("inactive-btn");
-      } else {
-        btn.textContent = "➡️";
-        btn.classList.add("inactive-btn");
-        btn.classList.remove("active-btn");
-      }
-    }
-
-    function toggleRepeat() {
-      isRepeat = !isRepeat;
-      const btn = document.getElementById("repeat-btn");
-      if (isRepeat) {
-        btn.textContent = "🔁1"; // リピートONをわかりやすく
-        btn.classList.add("active-btn");
-        btn.classList.remove("inactive-btn");
-      } else {
-        btn.textContent = "🔁"; // リピートOFF表示
-        btn.classList.add("inactive-btn");
-        btn.classList.remove("active-btn");
-      }
-    }
-
-    function toggleFavorite(index) {
-      if (favorites.has(index)) {
-        favorites.delete(index);
-      } else {
-        favorites.add(index);
-      }
-      renderTrackList(searchBox.value);
-    }
-
-    function toggleFavMode() {
-      isFavMode = !isFavMode;
-      const btn = document.getElementById("favmode-btn");
-      if (isFavMode) {
-        btn.classList.add("active-btn");
-        btn.classList.remove("inactive-btn");
-      } else {
-        btn.classList.add("inactive-btn");
-        btn.classList.remove("active-btn");
-      }
-      renderTrackList(searchBox.value);
-    }
-
-    // 現在のプレイリスト（通常 or ⭐）
-    function getCurrentTrackList() {
-      let list = [];
-      tracks.forEach((_, i) => {
-        if (!isFavMode || favorites.has(i)) list.push(i);
-      });
-      return list;
-    }
-
-    // 曲終了時の処理
-    audio.addEventListener("ended", () => {
-      if (isRepeat) {
-        playTrack(currentIndex); // 同じ曲をもう一度再生
-      } else {
-        nextTrack();
-      }
-    });
-
-    // ⏮
-    function prevTrack() {
-      if (tracks.length === 0) return;
-      if (isRepeat) {
-        playTrack(currentIndex);
-        return;
-      }
-      let list = getCurrentTrackList();
-      if (isShuffle) {
-        playTrack(list[Math.floor(Math.random() * list.length)]);
-      } else {
-        let idx = list.indexOf(currentIndex);
-        idx = (idx - 1 + list.length) % list.length;
-        playTrack(list[idx]);
-      }
-    }
-
-    // ⏭
-    function nextTrack() {
-      if (tracks.length === 0) return;
-      if (isRepeat) {
-        playTrack(currentIndex);
-        return;
-      }
-      let list = getCurrentTrackList();
-      if (isShuffle) {
-        playTrack(list[Math.floor(Math.random() * list.length)]);
-      } else {
-        let idx = list.indexOf(currentIndex);
-        idx = (idx + 1) % list.length;
-        playTrack(list[idx]);
-      }
-    }
-
-    // 検索イベント
-    searchBox.addEventListener("input", (e) => {
-      renderTrackList(e.target.value);
-    });
-
-    window.addEventListener("DOMContentLoaded", loadTracks);
-      // === 🎵 曲名スクロール関数 ===
-   function updateMiniTitle(title, artist) {
+  const audio = document.getElementById("audio");
   const miniTitle = document.getElementById("mini-title");
-  const text = `${title} - ${artist}`;
+  const trackList = document.getElementById("track-list");
+  const searchBox = document.getElementById("track-search");
+  const playBtn = document.getElementById("play-btn");
 
-  if (text.length > 7) {
-    miniTitle.innerHTML = `<span>${text}</span>`;
-    const span = miniTitle.querySelector("span");
-    const duration = Math.max(8, text.length / 1.5); // ゆっくり流す
-    span.style.animationDuration = `${duration}s`;
-  } else {
-    miniTitle.textContent = text;
+  // tracks.json を読み込む
+  async function loadTracks() {
+    try {
+      const res = await fetch("tracks.json");
+      tracks = await res.json();
+      renderTrackList();
+    } catch (e) {
+      console.error("曲リスト読み込みエラー", e);
+    }
   }
-}
-  </script>
+
+  // 曲一覧を表示
+  function renderTrackList(filter = "") {
+    trackList.innerHTML = "";
+    tracks
+      .filter((t, i) => {
+        if (isFavMode && !favorites.has(i)) return false;
+        return (
+          t.title.toLowerCase().includes(filter.toLowerCase()) ||
+          t.artist.toLowerCase().includes(filter.toLowerCase())
+        );
+      })
+      .forEach((track, i) => {
+        const li = document.createElement("li");
+        li.innerHTML = `
+          <span>${track.title} - ${track.artist}</span>
+          <span>
+            <button onclick="toggleFavorite(${i});event.stopPropagation();">
+              ${favorites.has(i) ? "⭐" : "☆"}
+            </button>
+          </span>
+        `;
+        li.onclick = () => playTrack(i);
+        trackList.appendChild(li);
+      });
+  }
+
+  // 共通の loadeddata ハンドラ
+  function handleLoaded() {
+    audio.play().then(() => {
+      isPlaying = true;
+      updateMiniTitle(tracks[currentIndex].title, tracks[currentIndex].artist);
+      playBtn.textContent = "⏸";
+    }).catch(err => {
+      console.error("再生エラー:", err);
+    });
+    audio.removeEventListener("loadeddata", handleLoaded);
+  }
+
+  // 曲を再生
+  function playTrack(index) {
+    currentIndex = index;
+
+    audio.pause();
+    audio.currentTime = 0;
+    audio.src = tracks[index].url;
+
+    // 念のため古いリスナー削除 → 新しく登録
+    audio.removeEventListener("loadeddata", handleLoaded);
+    audio.addEventListener("loadeddata", handleLoaded);
+
+    audio.load();
+  }
+
+  function togglePlay() {
+    if (isPlaying) {
+      audio.pause();
+      isPlaying = false;
+      playBtn.textContent = "▶️";
+    } else {
+      if (currentIndex === -1 && tracks.length > 0) {
+        playTrack(0);
+      } else {
+        audio.play();
+      }
+      isPlaying = true;
+      playBtn.textContent = "⏸";
+    }
+  }
+
+  // ⏮
+  function prevTrack() {
+    if (tracks.length === 0) return;
+    if (isRepeat) {
+      playTrack(currentIndex);
+      return;
+    }
+    let list = getCurrentTrackList();
+    if (isShuffle) {
+      playTrack(list[Math.floor(Math.random() * list.length)]);
+    } else {
+      let idx = list.indexOf(currentIndex);
+      idx = (idx - 1 + list.length) % list.length;
+      playTrack(list[idx]);
+    }
+  }
+
+  // ⏭
+  function nextTrack() {
+    if (tracks.length === 0) return;
+    if (isRepeat) {
+      playTrack(currentIndex);
+      return;
+    }
+    let list = getCurrentTrackList();
+    if (isShuffle) {
+      playTrack(list[Math.floor(Math.random() * list.length)]);
+    } else {
+      let idx = list.indexOf(currentIndex);
+      idx = (idx + 1) % list.length;
+      playTrack(list[idx]);
+    }
+  }
+
+  function toggleMode() {
+    isShuffle = !isShuffle;
+    const btn = document.getElementById("shuffle-btn");
+    if (isShuffle) {
+      btn.textContent = "🔀";
+      btn.classList.add("active-btn");
+      btn.classList.remove("inactive-btn");
+    } else {
+      btn.textContent = "➡️";
+      btn.classList.add("inactive-btn");
+      btn.classList.remove("active-btn");
+    }
+  }
+
+  function toggleRepeat() {
+    isRepeat = !isRepeat;
+    const btn = document.getElementById("repeat-btn");
+    if (isRepeat) {
+      btn.textContent = "🔁1";
+      btn.classList.add("active-btn");
+      btn.classList.remove("inactive-btn");
+    } else {
+      btn.textContent = "🔁";
+      btn.classList.add("inactive-btn");
+      btn.classList.remove("active-btn");
+    }
+  }
+
+  function toggleFavorite(index) {
+    if (favorites.has(index)) {
+      favorites.delete(index);
+    } else {
+      favorites.add(index);
+    }
+    renderTrackList(searchBox.value);
+  }
+
+  function toggleFavMode() {
+    isFavMode = !isFavMode;
+    const btn = document.getElementById("favmode-btn");
+    if (isFavMode) {
+      btn.classList.add("active-btn");
+      btn.classList.remove("inactive-btn");
+    } else {
+      btn.classList.add("inactive-btn");
+      btn.classList.remove("active-btn");
+    }
+    renderTrackList(searchBox.value);
+  }
+
+  // 現在のプレイリスト
+  function getCurrentTrackList() {
+    let list = [];
+    tracks.forEach((_, i) => {
+      if (!isFavMode || favorites.has(i)) list.push(i);
+    });
+    return list;
+  }
+
+  // 曲終了時の処理
+  audio.addEventListener("ended", () => {
+    if (isRepeat) {
+      playTrack(currentIndex);
+    } else {
+      nextTrack();
+    }
+  });
+
+  // 検索イベント
+  searchBox.addEventListener("input", (e) => {
+    renderTrackList(e.target.value);
+  });
+
+  window.addEventListener("DOMContentLoaded", loadTracks);
+
+  // === 🎵 曲名スクロール関数 ===
+  function updateMiniTitle(title, artist) {
+    const miniTitle = document.getElementById("mini-title");
+    const text = `${title} - ${artist}`;
+
+    if (text.length > 7) {
+      miniTitle.innerHTML = `<span>${text}</span>`;
+      const span = miniTitle.querySelector("span");
+      const duration = Math.max(8, text.length / 1.5);
+      span.style.animationDuration = `${duration}s`;
+    } else {
+      miniTitle.textContent = text;
+    }
+  }
+</script>
 </body>
 </html>
