@@ -83,6 +83,10 @@
       max-width: 90%;
       background: #000;
       box-shadow: 0 0 20px rgba(29, 185, 84, 0.5);
+      min-height: 200px; /* ローディング時の枠保持 */
+      display: flex;
+      justify-content: center;
+      align-items: center;
     }
 
     .frame img {
@@ -91,6 +95,17 @@
       max-height: 70vh;
       object-fit: contain;
       border-radius: 8px;
+    }
+
+    /* ローディングテキスト */
+    .loading {
+      color: #1db954;
+      font-size: 1.2rem;
+      font-weight: bold;
+      animation: blink 1.5s infinite;
+    }
+    @keyframes blink {
+      50% { opacity: 0.5; }
     }
 
     /* レスポンシブ調整 */
@@ -134,7 +149,8 @@
       <button id="generate-btn" onclick="generateImage()">生成</button>
     </div>
     <div class="frame" id="image-frame" style="display:none;">
-      <img id="generated-img" src="" alt="生成画像">
+      <span class="loading" id="loading-text" style="display:none;">画像生成中...</span>
+      <img id="generated-img" src="" alt="生成画像" style="display:none;">
     </div>
     <button class="spotify-btn" onclick="showSection('home')">機能選択に戻る</button>
   </section>
@@ -155,6 +171,12 @@
       const category = document.getElementById("category").value;
       const img = document.getElementById("generated-img");
       const frame = document.getElementById("image-frame");
+      const loading = document.getElementById("loading-text");
+
+      // 初期化
+      frame.style.display = "flex";
+      img.style.display = "none";
+      loading.style.display = "block";
 
       try {
         const res = await fetch(`https://nekobot.xyz/api/image?type=${category}`);
@@ -162,13 +184,16 @@
 
         if (data && data.message) {
           img.src = data.message;
-          frame.style.display = "block";
+          img.onload = () => {
+            loading.style.display = "none";
+            img.style.display = "block";
+          };
         } else {
-          frame.innerHTML = "<p>画像を取得できませんでした。</p>";
+          loading.textContent = "画像を取得できませんでした。";
         }
       } catch (err) {
         console.error("画像取得エラー:", err);
-        frame.innerHTML = "<p>エラーが発生しました。</p>";
+        loading.textContent = "エラーが発生しました。";
       }
     }
   </script>
