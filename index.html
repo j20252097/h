@@ -135,6 +135,32 @@
       color: #fff;
     }
 
+    /* メモ */
+    #memo textarea {
+      width: 90%;
+      max-width: 600px;
+      padding: 0.8rem;
+      border-radius: 8px;
+      border: none;
+      outline: none;
+      resize: vertical;
+      margin-bottom: 1rem;
+    }
+    #memo-list div {
+      border: 1px solid #1db954;
+      border-radius: 8px;
+      padding: 10px;
+      margin: 10px auto;
+      background: #181818;
+      max-width: 600px;
+      text-align: left;
+    }
+    #memo-list img {
+      max-width: 100%;
+      border-radius: 6px;
+      margin-top: 8px;
+    }
+
     @media (max-width: 768px) {
       h1, h2 { font-size: 1.4rem; }
       .spotify-btn {
@@ -152,6 +178,7 @@
     <h1>Multi Tool</h1>
     <button class="spotify-btn" onclick="showSection('image-generator')">画像生成</button>
     <button class="spotify-btn" onclick="showSection('calculator')">電卓</button>
+    <button class="spotify-btn" onclick="showSection('memo')">メモ</button>
   </header>
 
   <!-- === 画像生成機能エリア === -->
@@ -218,8 +245,19 @@
     <button class="spotify-btn" onclick="showSection('home')">機能選択に戻る</button>
   </section>
 
+  <!-- === メモ機能エリア === -->
+  <section id="memo">
+    <h2>メモ</h2>
+    <textarea id="memo-text" placeholder="ここにメモを書いてください..." rows="4"></textarea><br>
+    <input type="file" id="memo-image" accept="image/*"><br><br>
+    <button class="spotify-btn" onclick="saveMemo()">保存</button>
+    <button class="spotify-btn" onclick="shareMemo()">URLで共有（テキストのみ）</button>
+    <div id="memo-list"></div>
+    <button class="spotify-btn" onclick="showSection('home')">機能選択に戻る</button>
+  </section>
+
   <script>
-    // セクション切り替え
+    // === セクション切り替え ===
     function showSection(id) {
       document.querySelectorAll("section").forEach(sec => sec.classList.remove("active"));
       if (id === "home") {
@@ -231,7 +269,7 @@
       }
     }
 
-    // 画像生成
+    // === 画像生成 ===
     async function generateImage() {
       const category = document.getElementById("category").value;
       const img = document.getElementById("generated-img");
@@ -245,7 +283,6 @@
       try {
         const res = await fetch(`https://nekobot.xyz/api/image?type=${category}`);
         const data = await res.json();
-
         if (data && data.message) {
           img.src = data.message;
           img.onload = () => {
@@ -261,17 +298,13 @@
       }
     }
 
-    // 電卓
+    // === 電卓 ===
     function insert(val) {
       const display = document.getElementById("calc-display");
       if (display.innerText === "0") display.innerText = "";
 
-      // () を含む関数のときはカーソルを中に移動
       if (val.includes("()")) {
-        const func = val;
-        display.innerText += func;
-
-        // カーソルを () の中に移動
+        display.innerText += val;
         const range = document.createRange();
         const sel = window.getSelection();
         range.setStart(display.childNodes[0], display.innerText.length - 1);
@@ -282,21 +315,17 @@
         display.innerText += val;
       }
     }
-
     function clearDisplay() {
       document.getElementById("calc-display").innerText = "0";
     }
-
     function deleteChar() {
       const display = document.getElementById("calc-display");
       display.innerText = display.innerText.slice(0, -1) || "0";
     }
-
     function square() {
       const display = document.getElementById("calc-display");
       display.innerText += "**2";
     }
-
     function calculate() {
       const display = document.getElementById("calc-display");
       try {
@@ -312,6 +341,93 @@
         display.innerText = "エラー";
       }
     }
+
+    // === メモ機能 ===
+    let memos = JSON.parse(localStorage.getItem("memos") || "[]");
+    let editIndex = null;
+
+    function saveMemo() {
+      const text = document.getElementById("memo-text").value;
+      const file = document.getElementById("memo-image").files[0];
+
+      if (!text && !file) return alert("メモ内容が空です");
+
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = () => {
+          if (editIndex !== null) {
+            memos[editIndex] = { text, image: reader.result };
+            editIndex = null;
+          } else {
+            memos.unshift({ text, image: reader.result }); // 新しいメモを上に
+          }
+          localStorage.setItem("memos", JSON.stringify(memos));
+          renderMemos();
+        };
+        reader.readAsDataURL(file);
+      } else {
+        if (editIndex !== null) {
+          memos[editIndex] = { text, image: memos[editIndex].image };
+          editIndex = null;
+        } else {
+          memos.unshift({ text, image: null }); // 新しいメモを上に
+        }
+        localStorage.setItem("memos", JSON.stringify(memos));
+        renderMemos();
+      }
+      document.getElementById("memo-text").value = "";
+      document.getElementById("memo-image").value = "";
+    }
+
+    function renderMemos() {
+      const list = document.getElementById("memo-list");
+      list.innerHTML = "";
+      memos.forEach((memo, i) => {
+        const div = document.createElement("div");
+        div.innerHTML = `
+          <p>${memo.text || ""}</p>
+          ${memo.image ? `<img src="${memo.image}">` : ""}
+          <div style="margin-top:8px;">
+            <button class="spotify-btn" style="padding:0.3rem 1rem; font-size:0.9rem;" onclick="editMemo(${i})">✏️ 編集</button>
+            <button class="spotify-btn" style="padding:0.3rem 1rem; font-size:0.9rem; background:#b91d1d;" onclick="deleteMemo(${i})">🗑️ 削除</button>
+          </div>
+        `;
+        list.appendChild(div);
+      });
+    }
+
+    function editMemo(index) {
+      document.getElementById("memo-text").value = memos[index].text || "";
+      editIndex = index;
+      alert("編集モードになりました。修正後に保存を押してください。");
+    }
+
+    function deleteMemo(index) {
+      if (!confirm("このメモを削除しますか？")) return;
+      memos.splice(index, 1);
+      localStorage.setItem("memos", JSON.stringify(memos));
+      renderMemos();
+    }
+
+    function shareMemo() {
+      const text = document.getElementById("memo-text").value;
+      if (!text) return alert("共有するテキストを入力してください");
+      const encoded = encodeURIComponent(btoa(text));
+      const url = `${location.origin}${location.pathname}?memo=${encoded}`;
+      navigator.clipboard.writeText(url).then(() => {
+        alert("共有URLをコピーしました:\n" + url);
+      });
+    }
+
+    window.addEventListener("DOMContentLoaded", () => {
+      const params = new URLSearchParams(location.search);
+      if (params.has("memo")) {
+        const decoded = atob(decodeURIComponent(params.get("memo")));
+        document.getElementById("memo-text").value = decoded;
+        alert("共有されたメモを読み込みました:\n" + decoded);
+      }
+      renderMemos();
+    });
   </script>
 </body>
 </html>
