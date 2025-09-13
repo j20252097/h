@@ -236,15 +236,23 @@
     <button class="spotify-btn" onclick="showSection('home')">機能選択に戻る</button>
   </section>
 
-  <!-- === メモ機能エリア === -->
-  <section id="memo">
-    <h2>メモ</h2>
-    <textarea id="memo-text" placeholder="ここにメモを書いてください..." rows="4"></textarea><br>
-    <input type="file" id="memo-image" accept="image/*"><br><br>
-    <button class="spotify-btn" onclick="saveMemo()">保存</button>
-    <div id="memo-list"></div>
-    <button class="spotify-btn" onclick="showSection('home')">機能選択に戻る</button>
-  </section>
+ <!-- === メモ機能エリア === -->
+<section id="memo">
+  <h2>メモ</h2>
+  <textarea id="memo-text" placeholder="ここにメモを書いてください..." rows="4"></textarea><br>
+  <input type="file" id="memo-image" accept="image/*"><br><br>
+  <button class="spotify-btn" onclick="saveMemo()">保存</button>
+
+  <!-- 🔍 検索ボックスを追加 -->
+  <div style="margin-top:1rem;">
+    <input type="text" id="search-box" placeholder="メモを検索..." 
+           style="padding:0.5rem; width:80%; max-width:500px; border-radius:6px; border:1px solid #1db954;">
+  </div>
+
+  <div id="memo-list"></div>
+  <button class="spotify-btn" onclick="showSection('home')">機能選択に戻る</button>
+</section>
+
 
   <script>
     // --- 共通セクション切り替え ---
@@ -331,75 +339,89 @@
       }
     }
 
-    // --- メモ ---
-    let memos = JSON.parse(localStorage.getItem("memos") || "[]");
-    let editIndex = null;
+  // --- メモ ---
+let memos = JSON.parse(localStorage.getItem("memos") || "[]");
+let editIndex = null;
 
-    function saveMemo() {
-      const text = document.getElementById("memo-text").value;
-      const file = document.getElementById("memo-image").files[0];
-      if (!text && !file) return alert("メモ内容が空です");
+function saveMemo() {
+  const text = document.getElementById("memo-text").value;
+  const file = document.getElementById("memo-image").files[0];
+  if (!text && !file) return alert("メモ内容が空です");
 
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = () => {
-          if (editIndex !== null) {
-            memos[editIndex] = { text, image: reader.result };
-            editIndex = null;
-          } else {
-            memos.unshift({ text, image: reader.result }); // 新しいのを上に追加
-          }
-          localStorage.setItem("memos", JSON.stringify(memos));
-          renderMemos();
-        };
-        reader.readAsDataURL(file);
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (editIndex !== null) {
+        memos[editIndex] = { text, image: reader.result };
+        editIndex = null;
       } else {
-        if (editIndex !== null) {
-          memos[editIndex] = { text, image: memos[editIndex].image };
-          editIndex = null;
-        } else {
-          memos.unshift({ text, image: null }); // 新しいのを上に追加
-        }
-        localStorage.setItem("memos", JSON.stringify(memos));
-        renderMemos();
+        memos.unshift({ text, image: reader.result }); // 新しいのを上に追加
       }
-      document.getElementById("memo-text").value = "";
-      document.getElementById("memo-image").value = "";
-    }
-
-    function renderMemos() {
-      const list = document.getElementById("memo-list");
-      list.innerHTML = "";
-      memos.forEach((memo, i) => {
-        const div = document.createElement("div");
-        div.innerHTML = `
-          <p>${memo.text || ""}</p>
-          ${memo.image ? `<img src="${memo.image}">` : ""}
-          <div style="margin-top:8px;">
-            <button class="spotify-btn" style="padding:0.3rem 1rem; font-size:0.9rem;" onclick="editMemo(${i})">✏️ 編集</button>
-            <button class="spotify-btn" style="padding:0.3rem 1rem; font-size:0.9rem; background:#b91d1d;" onclick="deleteMemo(${i})">🗑️ 削除</button>
-          </div>
-        `;
-        list.appendChild(div);
-      });
-    }
-
-    function editMemo(index) {
-      document.getElementById("memo-text").value = memos[index].text || "";
-      editIndex = index;
-      alert("編集モードになりました。修正後に保存を押してください。");
-    }
-
-    function deleteMemo(index) {
-      if (!confirm("このメモを削除しますか？")) return;
-      memos.splice(index, 1);
       localStorage.setItem("memos", JSON.stringify(memos));
       renderMemos();
+    };
+    reader.readAsDataURL(file);
+  } else {
+    if (editIndex !== null) {
+      memos[editIndex] = { text, image: memos[editIndex].image };
+      editIndex = null;
+    } else {
+      memos.unshift({ text, image: null }); // 新しいのを上に追加
     }
+    localStorage.setItem("memos", JSON.stringify(memos));
+    renderMemos();
+  }
+  document.getElementById("memo-text").value = "";
+  document.getElementById("memo-image").value = "";
+}
 
-    window.addEventListener("DOMContentLoaded", () => {
-      renderMemos();
+// 🔍 検索付き renderMemos
+function renderMemos(filter = "") {
+  const list = document.getElementById("memo-list");
+  list.innerHTML = "";
+
+  memos
+    .filter(memo => {
+      if (!filter) return true;
+      const textMatch = memo.text && memo.text.toLowerCase().includes(filter.toLowerCase());
+      return textMatch; // テキストのみ対象（画像検索は除外）
+    })
+    .forEach((memo, i) => {
+      const div = document.createElement("div");
+      div.innerHTML = `
+        <p>${memo.text || ""}</p>
+        ${memo.image ? `<img src="${memo.image}">` : ""}
+        <div style="margin-top:8px;">
+          <button class="spotify-btn" style="padding:0.3rem 1rem; font-size:0.9rem;" onclick="editMemo(${i})">✏️ 編集</button>
+          <button class="spotify-btn" style="padding:0.3rem 1rem; font-size:0.9rem; background:#b91d1d;" onclick="deleteMemo(${i})">🗑️ 削除</button>
+        </div>
+      `;
+      list.appendChild(div);
     });
+}
+
+function editMemo(index) {
+  document.getElementById("memo-text").value = memos[index].text || "";
+  editIndex = index;
+  alert("編集モードになりました。修正後に保存を押してください。");
+}
+
+function deleteMemo(index) {
+  if (!confirm("このメモを削除しますか？")) return;
+  memos.splice(index, 1);
+  localStorage.setItem("memos", JSON.stringify(memos));
+  renderMemos();
+}
+
+// 🔍 検索ボックスイベント
+document.getElementById("search-box").addEventListener("input", (e) => {
+  renderMemos(e.target.value);
+});
+
+window.addEventListener("DOMContentLoaded", () => {
+  renderMemos();
+});
+
   </script>
 </body>
 </html>
