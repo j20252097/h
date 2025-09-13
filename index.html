@@ -636,12 +636,13 @@
 
     function toggleRepeat() {
       isRepeat = !isRepeat;
-      audio.loop = isRepeat;
       const btn = document.getElementById("repeat-btn");
       if (isRepeat) {
+        btn.textContent = "🔁1"; // リピートONをわかりやすく
         btn.classList.add("active-btn");
         btn.classList.remove("inactive-btn");
       } else {
+        btn.textContent = "🔁"; // リピートOFF表示
         btn.classList.add("inactive-btn");
         btn.classList.remove("active-btn");
       }
@@ -681,11 +682,45 @@
     // 曲終了時の処理
     audio.addEventListener("ended", () => {
       if (isRepeat) {
-        audio.play();
+        playTrack(currentIndex); // 同じ曲をもう一度再生
       } else {
         nextTrack();
       }
     });
+
+    // ⏮
+    function prevTrack() {
+      if (tracks.length === 0) return;
+      if (isRepeat) {
+        playTrack(currentIndex);
+        return;
+      }
+      let list = getCurrentTrackList();
+      if (isShuffle) {
+        playTrack(list[Math.floor(Math.random() * list.length)]);
+      } else {
+        let idx = list.indexOf(currentIndex);
+        idx = (idx - 1 + list.length) % list.length;
+        playTrack(list[idx]);
+      }
+    }
+
+    // ⏭
+    function nextTrack() {
+      if (tracks.length === 0) return;
+      if (isRepeat) {
+        playTrack(currentIndex);
+        return;
+      }
+      let list = getCurrentTrackList();
+      if (isShuffle) {
+        playTrack(list[Math.floor(Math.random() * list.length)]);
+      } else {
+        let idx = list.indexOf(currentIndex);
+        idx = (idx + 1) % list.length;
+        playTrack(list[idx]);
+      }
+    }
 
     // 検索イベント
     searchBox.addEventListener("input", (e) => {
