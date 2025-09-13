@@ -158,6 +158,69 @@
       border-radius: 6px;
     }
 
+    /* 音楽プレイヤー */
+    #player {
+      background: #181818;
+      border-radius: 12px;
+      padding: 1rem;
+    }
+    #track-search {
+      padding: 0.5rem;
+      width: 80%;
+      max-width: 500px;
+      border-radius: 6px;
+      border: 1px solid #1db954;
+      margin-bottom: 1rem;
+    }
+    #track-list {
+      list-style: none;
+      padding: 0;
+    }
+    #track-list li {
+      padding: 0.8rem;
+      margin: 0.3rem auto;
+      background: #282828;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.2s ease;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    #track-list li:hover {
+      background: #1db954;
+      color: #000;
+    }
+    .favorite {
+      color: gold;
+      margin-left: 8px;
+    }
+    /* ミニプレイヤー */
+    #mini-player {
+      position: fixed;
+      bottom: 10px;
+      right: 10px;
+      background: #282828;
+      border-radius: 12px;
+      padding: 10px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.6);
+    }
+    #mini-player img {
+      width: 40px;
+      height: 40px;
+      border-radius: 6px;
+    }
+    #mini-player button {
+      background: none;
+      border: none;
+      color: #1db954;
+      cursor: pointer;
+      font-size: 1.2rem;
+    }
+
     @media (max-width: 768px) {
       h1, h2 { font-size: 1.4rem; }
       .spotify-btn {
@@ -167,6 +230,7 @@
       }
       .frame { max-width: 95%; }
       .calc-display { font-size: 1.5rem; }
+      #mini-player { flex-direction: column; align-items: flex-start; }
     }
   </style>
 </head>
@@ -176,9 +240,10 @@
     <button class="spotify-btn" onclick="showSection('image-generator')">画像生成</button>
     <button class="spotify-btn" onclick="showSection('calculator')">電卓</button>
     <button class="spotify-btn" onclick="showSection('memo')">メモ</button>
+    <button class="spotify-btn" onclick="showSection('player')">音楽プレイヤー</button>
   </header>
 
-  <!-- === 画像生成機能エリア === -->
+  <!-- === 画像生成 === -->
   <section id="image-generator">
     <h2>画像生成（R-18）</h2>
     <div class="controls">
@@ -203,7 +268,7 @@
     <button class="spotify-btn" onclick="showSection('home')">機能選択に戻る</button>
   </section>
 
-  <!-- === 電卓機能エリア === -->
+  <!-- === 電卓 === -->
   <section id="calculator">
     <h2>関数電卓</h2>
     <div class="calculator">
@@ -236,26 +301,46 @@
     <button class="spotify-btn" onclick="showSection('home')">機能選択に戻る</button>
   </section>
 
- <!-- === メモ機能エリア === -->
-<section id="memo">
-  <h2>メモ</h2>
-  <textarea id="memo-text" placeholder="ここにメモを書いてください..." rows="4"></textarea><br>
-  <input type="file" id="memo-image" accept="image/*"><br><br>
-  <button class="spotify-btn" onclick="saveMemo()">保存</button>
+  <!-- === メモ === -->
+  <section id="memo">
+    <h2>メモ</h2>
+    <textarea id="memo-text" placeholder="ここにメモを書いてください..." rows="4"></textarea><br>
+    <input type="file" id="memo-image" accept="image/*"><br><br>
+    <button class="spotify-btn" onclick="saveMemo()">保存</button>
 
-  <!-- 🔍 検索ボックスを追加 -->
-  <div style="margin-top:1rem;">
-    <input type="text" id="search-box" placeholder="メモを検索..." 
-           style="padding:0.5rem; width:80%; max-width:500px; border-radius:6px; border:1px solid #1db954;">
+    <!-- 🔍 検索 -->
+    <div style="margin-top:1rem;">
+      <input type="text" id="search-box" placeholder="メモを検索..." 
+             style="padding:0.5rem; width:80%; max-width:500px; border-radius:6px; border:1px solid #1db954;">
+    </div>
+
+    <div id="memo-list"></div>
+    <button class="spotify-btn" onclick="showSection('home')">機能選択に戻る</button>
+  </section>
+
+  <!-- === 音楽プレイヤー === -->
+  <section id="player">
+    <h2>音楽プレイヤー</h2>
+    <input type="text" id="track-search" placeholder="曲を検索...">
+    <ul id="track-list"></ul>
+    <button class="spotify-btn" onclick="showSection('home')">機能選択に戻る</button>
+  </section>
+
+  <!-- ミニプレイヤー -->
+  <div id="mini-player">
+    <img src="https://raw.githubusercontent.com/j20252097/h/refs/heads/main/1718374862947-Di6UorBBZD.webp" alt="art">
+    <div id="mini-title">再生中なし</div>
+    <button onclick="prevTrack()">⏮</button>
+    <button onclick="togglePlay()">▶️</button>
+    <button onclick="nextTrack()">⏭</button>
+    <button onclick="toggleMode()">🔀</button>
+    <button onclick="toggleRepeat()">🔁</button>
   </div>
 
-  <div id="memo-list"></div>
-  <button class="spotify-btn" onclick="showSection('home')">機能選択に戻る</button>
-</section>
-
+  <audio id="audio"></audio>
 
   <script>
-    // --- 共通セクション切り替え ---
+    // === 共通セクション切替 ===
     function showSection(id) {
       document.querySelectorAll("section").forEach(sec => sec.classList.remove("active"));
       if (id === "home") {
@@ -267,7 +352,7 @@
       }
     }
 
-    // --- 画像生成 ---
+    // === 画像生成 ===
     async function generateImage() {
       const category = document.getElementById("category").value;
       const img = document.getElementById("generated-img");
@@ -296,7 +381,7 @@
       }
     }
 
-    // --- 電卓 ---
+    // === 電卓 ===
     function insert(val) {
       const display = document.getElementById("calc-display");
       if (display.innerText === "0") display.innerText = "";
@@ -339,89 +424,215 @@
       }
     }
 
-  // --- メモ ---
-let memos = JSON.parse(localStorage.getItem("memos") || "[]");
-let editIndex = null;
+    // === メモ ===
+    let memos = JSON.parse(localStorage.getItem("memos") || "[]");
+    let editIndex = null;
 
-function saveMemo() {
-  const text = document.getElementById("memo-text").value;
-  const file = document.getElementById("memo-image").files[0];
-  if (!text && !file) return alert("メモ内容が空です");
+    function saveMemo() {
+      const text = document.getElementById("memo-text").value;
+      const file = document.getElementById("memo-image").files[0];
+      if (!text && !file) return alert("メモ内容が空です");
 
-  if (file) {
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (editIndex !== null) {
-        memos[editIndex] = { text, image: reader.result };
-        editIndex = null;
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = () => {
+          if (editIndex !== null) {
+            memos[editIndex] = { text, image: reader.result };
+            editIndex = null;
+          } else {
+            memos.unshift({ text, image: reader.result });
+          }
+          localStorage.setItem("memos", JSON.stringify(memos));
+          renderMemos();
+        };
+        reader.readAsDataURL(file);
       } else {
-        memos.unshift({ text, image: reader.result }); // 新しいのを上に追加
+              if (editIndex !== null) {
+          memos[editIndex] = { text, image: memos[editIndex].image };
+          editIndex = null;
+        } else {
+          memos.unshift({ text, image: null }); // 新しいのを上に追加
+        }
+        localStorage.setItem("memos", JSON.stringify(memos));
+        renderMemos();
       }
+      document.getElementById("memo-text").value = "";
+      document.getElementById("memo-image").value = "";
+    }
+
+    // 🔍 検索付き renderMemos
+    function renderMemos(filter = "") {
+      const list = document.getElementById("memo-list");
+      list.innerHTML = "";
+
+      memos
+        .filter(memo => {
+          if (!filter) return true;
+          const textMatch = memo.text && memo.text.toLowerCase().includes(filter.toLowerCase());
+          return textMatch; // テキストのみ対象（画像検索は除外）
+        })
+        .forEach((memo, i) => {
+          const div = document.createElement("div");
+          div.innerHTML = `
+            <p>${memo.text || ""}</p>
+            ${memo.image ? `<img src="${memo.image}">` : ""}
+            <div style="margin-top:8px;">
+              <button class="spotify-btn" style="padding:0.3rem 1rem; font-size:0.9rem;" onclick="editMemo(${i})">✏️ 編集</button>
+              <button class="spotify-btn" style="padding:0.3rem 1rem; font-size:0.9rem; background:#b91d1d;" onclick="deleteMemo(${i})">🗑️ 削除</button>
+            </div>
+          `;
+          list.appendChild(div);
+        });
+    }
+
+    function editMemo(index) {
+      document.getElementById("memo-text").value = memos[index].text || "";
+      editIndex = index;
+      alert("編集モードになりました。修正後に保存を押してください。");
+    }
+
+    function deleteMemo(index) {
+      if (!confirm("このメモを削除しますか？")) return;
+      memos.splice(index, 1);
       localStorage.setItem("memos", JSON.stringify(memos));
       renderMemos();
-    };
-    reader.readAsDataURL(file);
-  } else {
-    if (editIndex !== null) {
-      memos[editIndex] = { text, image: memos[editIndex].image };
-      editIndex = null;
-    } else {
-      memos.unshift({ text, image: null }); // 新しいのを上に追加
     }
-    localStorage.setItem("memos", JSON.stringify(memos));
-    renderMemos();
-  }
-  document.getElementById("memo-text").value = "";
-  document.getElementById("memo-image").value = "";
-}
 
-// 🔍 検索付き renderMemos
-function renderMemos(filter = "") {
-  const list = document.getElementById("memo-list");
-  list.innerHTML = "";
-
-  memos
-    .filter(memo => {
-      if (!filter) return true;
-      const textMatch = memo.text && memo.text.toLowerCase().includes(filter.toLowerCase());
-      return textMatch; // テキストのみ対象（画像検索は除外）
-    })
-    .forEach((memo, i) => {
-      const div = document.createElement("div");
-      div.innerHTML = `
-        <p>${memo.text || ""}</p>
-        ${memo.image ? `<img src="${memo.image}">` : ""}
-        <div style="margin-top:8px;">
-          <button class="spotify-btn" style="padding:0.3rem 1rem; font-size:0.9rem;" onclick="editMemo(${i})">✏️ 編集</button>
-          <button class="spotify-btn" style="padding:0.3rem 1rem; font-size:0.9rem; background:#b91d1d;" onclick="deleteMemo(${i})">🗑️ 削除</button>
-        </div>
-      `;
-      list.appendChild(div);
+    // 🔍 検索ボックスイベント
+    document.getElementById("search-box").addEventListener("input", (e) => {
+      renderMemos(e.target.value);
     });
-}
 
-function editMemo(index) {
-  document.getElementById("memo-text").value = memos[index].text || "";
-  editIndex = index;
-  alert("編集モードになりました。修正後に保存を押してください。");
-}
+    window.addEventListener("DOMContentLoaded", () => {
+      renderMemos();
+    });
+<script>
+  // === 音楽プレイヤー ===
+  let tracks = [];
+  let currentIndex = -1;
+  let isPlaying = false;
+  let isShuffle = false;   // 順次 ↔ ランダム
+  let isRepeat = false;    // 🔁
+  let favorites = new Set();
 
-function deleteMemo(index) {
-  if (!confirm("このメモを削除しますか？")) return;
-  memos.splice(index, 1);
-  localStorage.setItem("memos", JSON.stringify(memos));
-  renderMemos();
-}
+  const audio = document.getElementById("audio");
+  const miniTitle = document.getElementById("mini-title");
+  const trackList = document.getElementById("track-list");
+  const searchBox = document.getElementById("track-search");
 
-// 🔍 検索ボックスイベント
-document.getElementById("search-box").addEventListener("input", (e) => {
-  renderMemos(e.target.value);
-});
+  // tracks.json を読み込む
+  async function loadTracks() {
+    try {
+      const res = await fetch("tracks.json");
+      tracks = await res.json();
+      renderTrackList();
+    } catch (e) {
+      console.error("曲リスト読み込みエラー", e);
+    }
+  }
 
-window.addEventListener("DOMContentLoaded", () => {
-  renderMemos();
-});
+  // 曲一覧を表示
+  function renderTrackList(filter = "") {
+    trackList.innerHTML = "";
+    tracks
+      .filter(t => t.title.toLowerCase().includes(filter.toLowerCase()) || 
+                   t.artist.toLowerCase().includes(filter.toLowerCase()))
+      .forEach((track, i) => {
+        const li = document.createElement("li");
+        li.innerHTML = `
+          <span>${track.title} - ${track.artist}</span>
+          <span>
+            <button onclick="toggleFavorite(${i});event.stopPropagation();">
+              ${favorites.has(i) ? "⭐" : "☆"}
+            </button>
+          </span>
+        `;
+        li.onclick = () => playTrack(i);
+        trackList.appendChild(li);
+      });
+  }
 
+  // 曲を再生
+  function playTrack(index) {
+    currentIndex = index;
+    audio.src = tracks[index].url;
+    audio.play();
+    isPlaying = true;
+    miniTitle.textContent = `${tracks[index].title} - ${tracks[index].artist}`;
+    document.querySelector("#mini-player button:nth-child(3)").textContent = "⏸";
+  }
+
+  function togglePlay() {
+    if (isPlaying) {
+      audio.pause();
+      isPlaying = false;
+      document.querySelector("#mini-player button:nth-child(3)").textContent = "▶️";
+    } else {
+      if (currentIndex === -1 && tracks.length > 0) {
+        playTrack(0);
+      } else {
+        audio.play();
+      }
+      isPlaying = true;
+      document.querySelector("#mini-player button:nth-child(3)").textContent = "⏸";
+    }
+  }
+
+  function prevTrack() {
+    if (tracks.length === 0) return;
+    if (isShuffle) {
+      playTrack(Math.floor(Math.random() * tracks.length));
+    } else {
+      currentIndex = (currentIndex - 1 + tracks.length) % tracks.length;
+      playTrack(currentIndex);
+    }
+  }
+
+  function nextTrack() {
+    if (tracks.length === 0) return;
+    if (isShuffle) {
+      playTrack(Math.floor(Math.random() * tracks.length));
+    } else {
+      currentIndex = (currentIndex + 1) % tracks.length;
+      playTrack(currentIndex);
+    }
+  }
+
+  function toggleMode() {
+    isShuffle = !isShuffle;
+    alert(isShuffle ? "ランダム再生 ON" : "順次再生 ON");
+  }
+
+  function toggleRepeat() {
+    isRepeat = !isRepeat;
+    audio.loop = isRepeat;
+    alert(isRepeat ? "リピート再生 ON" : "リピート再生 OFF");
+  }
+
+  function toggleFavorite(index) {
+    if (favorites.has(index)) {
+      favorites.delete(index);
+    } else {
+      favorites.add(index);
+    }
+    renderTrackList(searchBox.value);
+  }
+
+  // 曲終了時の処理
+  audio.addEventListener("ended", () => {
+    if (isRepeat) {
+      audio.play();
+    } else {
+      nextTrack();
+    }
+  });
+
+  // 検索イベント
+  searchBox.addEventListener("input", (e) => {
+    renderTrackList(e.target.value);
+  });
+
+  window.addEventListener("DOMContentLoaded", loadTracks);
   </script>
 </body>
 </html>
