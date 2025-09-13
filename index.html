@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>R-18 Generator</title>
+  <title>Multi Tool</title>
+  <link rel="icon" href="https://raw.githubusercontent.com/j20252097/h/refs/heads/main/1718374862947-Di6UorBBZD.webp">
   <style>
     body {
       margin: 0;
@@ -49,7 +50,7 @@
       display: block;
     }
 
-    /* セレクトボックスと生成ボタン */
+    /* 共通セレクト＆ボタン */
     select, button {
       padding: 0.5rem;
       margin: 0.5rem;
@@ -57,12 +58,12 @@
       border: none;
       font-size: 1rem;
     }
-
     select {
       background: #282828;
       color: #fff;
     }
 
+    /* 画像生成用 */
     #generate-btn {
       background: #1db954;
       color: #fff;
@@ -74,7 +75,6 @@
       background: #17a74a;
     }
 
-    /* 額縁スタイル */
     .frame {
       margin: 1.5rem auto;
       padding: 10px;
@@ -83,12 +83,11 @@
       max-width: 90%;
       background: #000;
       box-shadow: 0 0 20px rgba(29, 185, 84, 0.5);
-      min-height: 200px; /* ローディング時の枠保持 */
+      min-height: 200px;
       display: flex;
       justify-content: center;
       align-items: center;
     }
-
     .frame img {
       width: 100%;
       height: auto;
@@ -96,8 +95,6 @@
       object-fit: contain;
       border-radius: 8px;
     }
-
-    /* ローディングテキスト */
     .loading {
       color: #1db954;
       font-size: 1.2rem;
@@ -108,26 +105,60 @@
       50% { opacity: 0.5; }
     }
 
-    /* レスポンシブ調整 */
+    /* 電卓 */
+    .calculator {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      max-width: 400px;
+      margin: 0 auto;
+    }
+    .calc-display {
+      grid-column: span 4;
+      background: #282828;
+      color: #fff;
+      font-size: 1.5rem;
+      padding: 1rem;
+      text-align: right;
+      border-radius: 8px;
+      overflow-x: auto;
+    }
+    .calc-btn {
+      background: #1db954;
+      color: #fff;
+      border: none;
+      padding: 1rem;
+      font-size: 1.2rem;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    .calc-btn:hover {
+      background: #17a74a;
+    }
+    .calc-btn.operator {
+      background: #444;
+    }
+    .calc-btn.operator:hover {
+      background: #666;
+    }
+
+    /* レスポンシブ */
     @media (max-width: 768px) {
-      h1, h2 {
-        font-size: 1.4rem;
-      }
+      h1, h2 { font-size: 1.4rem; }
       .spotify-btn {
         width: 80%;
         font-size: 1rem;
         padding: 0.8rem 1rem;
       }
-      .frame {
-        max-width: 95%;
-      }
+      .frame { max-width: 95%; }
     }
   </style>
 </head>
 <body>
   <header>
-    <h1>機能選択</h1>
+    <h1>Multi Tool</h1>
     <button class="spotify-btn" onclick="showSection('image-generator')">画像生成</button>
+    <button class="spotify-btn" onclick="showSection('calculator')">電卓</button>
   </header>
 
   <!-- === 画像生成機能エリア === -->
@@ -155,7 +186,46 @@
     <button class="spotify-btn" onclick="showSection('home')">機能選択に戻る</button>
   </section>
 
+  <!-- === 電卓機能エリア === -->
+  <section id="calculator">
+    <h2>関数電卓</h2>
+    <div class="calculator">
+      <div class="calc-display" id="calc-display">0</div>
+      <button class="calc-btn operator" onclick="clearDisplay()">C</button>
+      <button class="calc-btn operator" onclick="deleteChar()">⌫</button>
+      <button class="calc-btn operator" onclick="insert('^')">^</button>
+      <button class="calc-btn operator" onclick="insert('/')">÷</button>
+
+      <button class="calc-btn" onclick="insert('7')">7</button>
+      <button class="calc-btn" onclick="insert('8')">8</button>
+      <button class="calc-btn" onclick="insert('9')">9</button>
+      <button class="calc-btn operator" onclick="insert('*')">×</button>
+
+      <button class="calc-btn" onclick="insert('4')">4</button>
+      <button class="calc-btn" onclick="insert('5')">5</button>
+      <button class="calc-btn" onclick="insert('6')">6</button>
+      <button class="calc-btn operator" onclick="insert('-')">-</button>
+
+      <button class="calc-btn" onclick="insert('1')">1</button>
+      <button class="calc-btn" onclick="insert('2')">2</button>
+      <button class="calc-btn" onclick="insert('3')">3</button>
+      <button class="calc-btn operator" onclick="insert('+')">+</button>
+
+      <button class="calc-btn" onclick="insert('0')">0</button>
+      <button class="calc-btn" onclick="insert('.')">.</button>
+      <button class="calc-btn operator" onclick="calculate()">=</button>
+      <button class="calc-btn operator" onclick="insert('Math.sqrt(')">√</button>
+
+      <button class="calc-btn operator" onclick="insert('Math.sin(')">sin</button>
+      <button class="calc-btn operator" onclick="insert('Math.cos(')">cos</button>
+      <button class="calc-btn operator" onclick="insert('Math.tan(')">tan</button>
+      <button class="calc-btn operator" onclick="insert('Math.log(')">log</button>
+    </div>
+    <button class="spotify-btn" onclick="showSection('home')">機能選択に戻る</button>
+  </section>
+
   <script>
+    // セクション切り替え
     function showSection(id) {
       document.querySelectorAll("section").forEach(sec => sec.classList.remove("active"));
       if (id === "home") {
@@ -167,13 +237,13 @@
       }
     }
 
+    // 画像生成
     async function generateImage() {
       const category = document.getElementById("category").value;
       const img = document.getElementById("generated-img");
       const frame = document.getElementById("image-frame");
       const loading = document.getElementById("loading-text");
 
-      // 初期化
       frame.style.display = "flex";
       img.style.display = "none";
       loading.style.display = "block";
@@ -194,6 +264,29 @@
       } catch (err) {
         console.error("画像取得エラー:", err);
         loading.textContent = "エラーが発生しました。";
+      }
+    }
+
+    // 電卓
+    function insert(val) {
+      const display = document.getElementById("calc-display");
+      if (display.innerText === "0") display.innerText = "";
+      display.innerText += val;
+    }
+    function clearDisplay() {
+      document.getElementById("calc-display").innerText = "0";
+    }
+    function deleteChar() {
+      const display = document.getElementById("calc-display");
+      display.innerText = display.innerText.slice(0, -1) || "0";
+    }
+    function calculate() {
+      const display = document.getElementById("calc-display");
+      try {
+        let expr = display.innerText.replace(/\^/g, "**");
+        display.innerText = eval(expr);
+      } catch {
+        display.innerText = "エラー";
       }
     }
   </script>
