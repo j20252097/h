@@ -23,7 +23,6 @@
       margin-bottom: 1rem;
     }
 
-    /* Spotify風ボタン */
     .spotify-btn {
       background-color: #1db954;
       border: none;
@@ -39,7 +38,6 @@
       background-color: #17a74a;
     }
 
-    /* セクション表示切替 */
     section {
       display: none;
       margin: 2rem auto;
@@ -48,61 +46,6 @@
     }
     section.active {
       display: block;
-    }
-
-    /* 共通セレクト＆ボタン */
-    select, button {
-      padding: 0.5rem;
-      margin: 0.5rem;
-      border-radius: 8px;
-      border: none;
-      font-size: 1rem;
-    }
-    select {
-      background: #282828;
-      color: #fff;
-    }
-
-    /* 画像生成用 */
-    #generate-btn {
-      background: #1db954;
-      color: #fff;
-      cursor: pointer;
-      border-radius: 30px;
-      padding: 0.6rem 1.2rem;
-    }
-    #generate-btn:hover {
-      background: #17a74a;
-    }
-
-    .frame {
-      margin: 1.5rem auto;
-      padding: 10px;
-      border: 5px solid #1db954;
-      border-radius: 12px;
-      max-width: 90%;
-      background: #000;
-      box-shadow: 0 0 20px rgba(29, 185, 84, 0.5);
-      min-height: 200px;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
-    .frame img {
-      width: 100%;
-      height: auto;
-      max-height: 70vh;
-      object-fit: contain;
-      border-radius: 8px;
-    }
-    .loading {
-      color: #1db954;
-      font-size: 1.2rem;
-      font-weight: bold;
-      animation: blink 1.5s infinite;
-    }
-    @keyframes blink {
-      50% { opacity: 0.5; }
     }
 
     /* 電卓 */
@@ -115,34 +58,37 @@
     }
     .calc-display {
       grid-column: span 4;
-      background: #282828;
-      color: #fff;
-      font-size: 1.5rem;
+      background: #000;
+      color: #1db954;
+      font-size: 2rem;
       padding: 1rem;
       text-align: right;
       border-radius: 8px;
       overflow-x: auto;
+      box-shadow: inset 0 0 10px rgba(29, 185, 84, 0.4);
     }
     .calc-btn {
-      background: #1db954;
+      background: #282828;
       color: #fff;
       border: none;
-      padding: 1rem;
+      padding: 1.2rem;
       font-size: 1.2rem;
       border-radius: 8px;
       cursor: pointer;
+      transition: background 0.2s ease;
     }
     .calc-btn:hover {
-      background: #17a74a;
+      background: #1db954;
+      color: #000;
     }
     .calc-btn.operator {
       background: #444;
     }
     .calc-btn.operator:hover {
       background: #666;
+      color: #fff;
     }
 
-    /* レスポンシブ */
     @media (max-width: 768px) {
       h1, h2 { font-size: 1.4rem; }
       .spotify-btn {
@@ -150,50 +96,25 @@
         font-size: 1rem;
         padding: 0.8rem 1rem;
       }
-      .frame { max-width: 95%; }
+      .calc-display { font-size: 1.5rem; }
     }
   </style>
 </head>
 <body>
   <header>
     <h1>Multi Tool</h1>
-    <button class="spotify-btn" onclick="showSection('image-generator')">画像生成</button>
     <button class="spotify-btn" onclick="showSection('calculator')">電卓</button>
   </header>
-
-  <!-- === 画像生成機能エリア === -->
-  <section id="image-generator">
-    <h2>画像生成（R-18）</h2>
-    <div class="controls">
-      <select id="category">
-        <option value="hentai">Hentai</option>
-        <option value="boobs">Boobs</option>
-        <option value="paizuri">Paizuri</option>
-        <option value="anal">Anal</option>
-        <option value="pussy">Pussy</option>
-        <option value="gonewild">Gonewild</option>
-        <option value="ass">Ass</option>
-        <option value="4k">4K</option>
-        <option value="hanal">Hentai Anal</option>
-        <option value="pgif">Hentai GIF</option>
-      </select>
-      <button id="generate-btn" onclick="generateImage()">生成</button>
-    </div>
-    <div class="frame" id="image-frame" style="display:none;">
-      <span class="loading" id="loading-text" style="display:none;">画像生成中...</span>
-      <img id="generated-img" src="" alt="生成画像" style="display:none;">
-    </div>
-    <button class="spotify-btn" onclick="showSection('home')">機能選択に戻る</button>
-  </section>
 
   <!-- === 電卓機能エリア === -->
   <section id="calculator">
     <h2>関数電卓</h2>
     <div class="calculator">
       <div class="calc-display" id="calc-display">0</div>
-      <button class="calc-btn operator" onclick="clearDisplay()">C</button>
+
+      <button class="calc-btn operator" onclick="clearDisplay()">AC</button>
       <button class="calc-btn operator" onclick="deleteChar()">⌫</button>
-      <button class="calc-btn operator" onclick="insert('^')">^</button>
+      <button class="calc-btn operator" onclick="square()">x²</button>
       <button class="calc-btn operator" onclick="insert('/')">÷</button>
 
       <button class="calc-btn" onclick="insert('7')">7</button>
@@ -214,12 +135,12 @@
       <button class="calc-btn" onclick="insert('0')">0</button>
       <button class="calc-btn" onclick="insert('.')">.</button>
       <button class="calc-btn operator" onclick="calculate()">=</button>
-      <button class="calc-btn operator" onclick="insert('Math.sqrt(')">√</button>
+      <button class="calc-btn operator" onclick="insert('sqrt(')">√</button>
 
-      <button class="calc-btn operator" onclick="insert('Math.sin(')">sin</button>
-      <button class="calc-btn operator" onclick="insert('Math.cos(')">cos</button>
-      <button class="calc-btn operator" onclick="insert('Math.tan(')">tan</button>
-      <button class="calc-btn operator" onclick="insert('Math.log(')">log</button>
+      <button class="calc-btn operator" onclick="insert('sin(')">sin</button>
+      <button class="calc-btn operator" onclick="insert('cos(')">cos</button>
+      <button class="calc-btn operator" onclick="insert('tan(')">tan</button>
+      <button class="calc-btn operator" onclick="insert('log(')">log</button>
     </div>
     <button class="spotify-btn" onclick="showSection('home')">機能選択に戻る</button>
   </section>
@@ -237,53 +158,37 @@
       }
     }
 
-    // 画像生成
-    async function generateImage() {
-      const category = document.getElementById("category").value;
-      const img = document.getElementById("generated-img");
-      const frame = document.getElementById("image-frame");
-      const loading = document.getElementById("loading-text");
-
-      frame.style.display = "flex";
-      img.style.display = "none";
-      loading.style.display = "block";
-
-      try {
-        const res = await fetch(`https://nekobot.xyz/api/image?type=${category}`);
-        const data = await res.json();
-
-        if (data && data.message) {
-          img.src = data.message;
-          img.onload = () => {
-            loading.style.display = "none";
-            img.style.display = "block";
-          };
-        } else {
-          loading.textContent = "画像を取得できませんでした。";
-        }
-      } catch (err) {
-        console.error("画像取得エラー:", err);
-        loading.textContent = "エラーが発生しました。";
-      }
-    }
-
-    // 電卓
+    // 電卓機能
     function insert(val) {
       const display = document.getElementById("calc-display");
       if (display.innerText === "0") display.innerText = "";
       display.innerText += val;
     }
+
     function clearDisplay() {
       document.getElementById("calc-display").innerText = "0";
     }
+
     function deleteChar() {
       const display = document.getElementById("calc-display");
       display.innerText = display.innerText.slice(0, -1) || "0";
     }
+
+    function square() {
+      const display = document.getElementById("calc-display");
+      display.innerText += "**2";
+    }
+
     function calculate() {
       const display = document.getElementById("calc-display");
       try {
-        let expr = display.innerText.replace(/\^/g, "**");
+        let expr = display.innerText
+          .replace(/\^/g, "**")
+          .replace(/sqrt\(/g, "Math.sqrt(")
+          .replace(/sin\(/g, "Math.sin(")
+          .replace(/cos\(/g, "Math.cos(")
+          .replace(/tan\(/g, "Math.tan(")
+          .replace(/log\(/g, "Math.log(");
         display.innerText = eval(expr);
       } catch {
         display.innerText = "エラー";
