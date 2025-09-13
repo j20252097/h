@@ -109,6 +109,10 @@
       overflow-x: auto;
       box-shadow: inset 0 0 10px rgba(29, 185, 84, 0.4);
     }
+    .calc-display[contenteditable="true"] {
+      outline: none;
+      cursor: text;
+    }
     .calc-btn {
       background: #282828;
       color: #fff;
@@ -179,7 +183,7 @@
   <section id="calculator">
     <h2>関数電卓</h2>
     <div class="calculator">
-      <div class="calc-display" id="calc-display">0</div>
+      <div class="calc-display" id="calc-display" contenteditable="true">0</div>
 
       <button class="calc-btn operator" onclick="clearDisplay()">AC</button>
       <button class="calc-btn operator" onclick="deleteChar()">⌫</button>
@@ -204,12 +208,12 @@
       <button class="calc-btn" onclick="insert('0')">0</button>
       <button class="calc-btn" onclick="insert('.')">.</button>
       <button class="calc-btn operator" onclick="calculate()">=</button>
-      <button class="calc-btn operator" onclick="insert('sqrt(')">√</button>
+      <button class="calc-btn operator" onclick="insert('sqrt()')">√</button>
 
-      <button class="calc-btn operator" onclick="insert('sin(')">sin</button>
-      <button class="calc-btn operator" onclick="insert('cos(')">cos</button>
-      <button class="calc-btn operator" onclick="insert('tan(')">tan</button>
-      <button class="calc-btn operator" onclick="insert('log(')">log</button>
+      <button class="calc-btn operator" onclick="insert('sin()')">sin</button>
+      <button class="calc-btn operator" onclick="insert('cos()')">cos</button>
+      <button class="calc-btn operator" onclick="insert('tan()')">tan</button>
+      <button class="calc-btn operator" onclick="insert('log()')">log</button>
     </div>
     <button class="spotify-btn" onclick="showSection('home')">機能選択に戻る</button>
   </section>
@@ -261,7 +265,22 @@
     function insert(val) {
       const display = document.getElementById("calc-display");
       if (display.innerText === "0") display.innerText = "";
-      display.innerText += val;
+
+      // () を含む関数のときはカーソルを中に移動
+      if (val.includes("()")) {
+        const func = val;
+        display.innerText += func;
+
+        // カーソルを () の中に移動
+        const range = document.createRange();
+        const sel = window.getSelection();
+        range.setStart(display.childNodes[0], display.innerText.length - 1);
+        range.setEnd(display.childNodes[0], display.innerText.length - 1);
+        sel.removeAllRanges();
+        sel.addRange(range);
+      } else {
+        display.innerText += val;
+      }
     }
 
     function clearDisplay() {
