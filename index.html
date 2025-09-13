@@ -1,0 +1,16 @@
+<!-- === 画像生成機能エリア === -->
+<section id="image-generator" style="margin-top:2rem;">
+  <h2>画像生成（R-18）</h2>
+  <div class="controls">
+    <select id="category">
+      <option value="hentai">Hentai</option>
+      <option value="boobs">Boobs</option>
+      <option value="paizuri">Paizuri</option>
+      <option value="anal">Anal</option>
+    </select>
+    <button onclick="generateImage()">生成</button>
+  </div>
+  <div id="image-result" style="margin-top:1rem;">
+    <img id="generated-img" src="" alt="生成画像" style="max-width:100%; border-radius:8px; display:none;">
+  </div>
+</section>
