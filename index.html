@@ -1,12 +1,17 @@
-<!-- === 画像生成機能エリア === -->
 <section id="image-generator" style="margin-top:2rem;">
-  <h2>画像生成（R-18）</h2>
+  <h2>画像生成</h2>
   <div class="controls">
     <select id="category">
       <option value="hentai">Hentai</option>
       <option value="boobs">Boobs</option>
       <option value="paizuri">Paizuri</option>
       <option value="anal">Anal</option>
+      <option value="pussy">Pussy</option>
+      <option value="gonewild">Gonewild</option>
+      <option value="ass">Ass</option>
+      <option value="4k">4K</option>
+      <option value="hanal">Hentai Anal</option>
+      <option value="pgif">Hentai GIF</option>
     </select>
     <button onclick="generateImage()">生成</button>
   </div>
@@ -14,3 +19,26 @@
     <img id="generated-img" src="" alt="生成画像" style="max-width:100%; border-radius:8px; display:none;">
   </div>
 </section>
+
+<script>
+async function generateImage() {
+  const category = document.getElementById("category").value;
+  const resultBox = document.getElementById("image-result");
+  const img = document.getElementById("generated-img");
+
+  try {
+    const res = await fetch(`https://nekobot.xyz/api/image?type=${category}`);
+    const data = await res.json();
+
+    if (data && data.message) {
+      img.src = data.message;
+      img.style.display = "block";
+    } else {
+      resultBox.innerHTML = "<p>画像を取得できませんでした。</p>";
+    }
+  } catch (err) {
+    console.error("画像取得エラー:", err);
+    resultBox.innerHTML = "<p>エラーが発生しました。</p>";
+  }
+}
+</script>
