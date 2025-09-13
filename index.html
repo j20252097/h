@@ -377,7 +377,6 @@
           ${memo.image ? `<img src="${memo.image}">` : ""}
           <div style="margin-top:8px;">
             <button class="spotify-btn" style="padding:0.3rem 1rem; font-size:0.9rem;" onclick="editMemo(${i})">✏️ 編集</button>
-            <button class="spotify-btn" style="padding:0.3rem 1rem; font-size:0.9rem;" onclick="shareMemo(${i})">🔗 共有</button>
             <button class="spotify-btn" style="padding:0.3rem 1rem; font-size:0.9rem; background:#b91d1d;" onclick="deleteMemo(${i})">🗑️ 削除</button>
           </div>
         `;
@@ -398,27 +397,7 @@
       renderMemos();
     }
 
-    function shareMemo(index) {
-      const memo = memos[index];
-      const encoded = encodeURIComponent(btoa(JSON.stringify(memo)));
-      const url = `${location.origin}${location.pathname}?shared=${encoded}`;
-      navigator.clipboard.writeText(url).then(() => {
-        alert("このメモを共有URLとしてコピーしました:\n" + url);
-      });
-    }
-
     window.addEventListener("DOMContentLoaded", () => {
-      const params = new URLSearchParams(location.search);
-      if (params.has("shared")) {
-        try {
-          const memo = JSON.parse(atob(decodeURIComponent(params.get("shared"))));
-          memos.unshift(memo);
-          localStorage.setItem("memos", JSON.stringify(memos));
-          alert("共有されたメモを読み込みました！");
-        } catch {
-          alert("共有メモの読み込みに失敗しました。");
-        }
-      }
       renderMemos();
     });
   </script>
