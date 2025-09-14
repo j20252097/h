@@ -800,16 +800,20 @@ function toggleFavMode() {
       miniTitle.textContent = text;
     }
   }
-    function updateMediaSession(track) {
-  if ('mediaSession' in navigator) {
+   function updateMediaSession(track) {
+  if ("mediaSession" in navigator) {
     navigator.mediaSession.metadata = new MediaMetadata({
       title: track.title,
       artist: track.artist,
+      album: "Multi Tool",
       artwork: [
-        { src: track.cover || "https://raw.githubusercontent.com/j20252097/h/refs/heads/main/1718374862947-Di6UorBBZD.webp", sizes: "512x512", type: "image/png" }
+        {
+          src: "https://raw.githubusercontent.com/j20252097/h/refs/heads/main/1718374862947-Di6UorBBZD.webp",
+          sizes: "512x512",
+          type: "image/png"
+        }
       ]
     });
-
     navigator.mediaSession.setActionHandler("play", () => {
       audio.play();
       isPlaying = true;
