@@ -578,30 +578,33 @@
   }
 
   // 曲一覧を表示
-  function renderTrackList(filter = "") {
-    trackList.innerHTML = "";
-    tracks
-      .filter((t, i) => {
-        if (isFavMode && !favorites.has(i)) return false;
-        return (
-          t.title.toLowerCase().includes(filter.toLowerCase()) ||
-          t.artist.toLowerCase().includes(filter.toLowerCase())
-        );
-      })
-      .forEach((track, i) => {
-        const li = document.createElement("li");
-        li.innerHTML = `
-          <span>${track.title} - ${track.artist}</span>
-          <span>
-            <button onclick="toggleFavorite(${i});event.stopPropagation();">
-              ${favorites.has(i) ? "⭐" : "☆"}
-            </button>
-          </span>
-        `;
-        li.onclick = () => playTrack(i);
-        trackList.appendChild(li);
-      });
-  }
+ function renderTrackList(filter = "") {
+  trackList.innerHTML = "";
+
+  tracks
+    .map((t, i) => ({ ...t, index: i })) // ← 元のindexを保持
+    .filter(t => {
+      if (isFavMode && !favorites.has(t.index)) return false;
+      return (
+        t.title.toLowerCase().includes(filter.toLowerCase()) ||
+        t.artist.toLowerCase().includes(filter.toLowerCase())
+      );
+    })
+    .forEach(track => {
+      const li = document.createElement("li");
+      li.innerHTML = `
+        <span>${track.title} - ${track.artist}</span>
+        <span>
+          <button onclick="toggleFavorite(${track.index});event.stopPropagation();">
+            ${favorites.has(track.index) ? "⭐" : "☆"}
+          </button>
+        </span>
+      `;
+      li.onclick = () => playTrack(track.index); // ← 元のindexを渡す
+      trackList.appendChild(li);
+    });
+}
+
 
   // 共通の loadeddata ハンドラ
   function handleLoaded() {
