@@ -559,7 +559,7 @@
   let isPlaying = false;
   let isShuffle = false;   // 順次 ↔ ランダム
   let isRepeat = false;    // 🔁
-  let favorites = new Set();
+  let favorites = new Set(JSON.parse(localStorage.getItem("favorites") || "[]"));
   let isFavMode = false;   // ⭐お気に入りモード
 
   const audio = document.getElementById("audio");
@@ -734,14 +734,16 @@ function playTrack(index) {
     }
   }
 
-  function toggleFavorite(index) {
-    if (favorites.has(index)) {
-      favorites.delete(index);
-    } else {
-      favorites.add(index);
-    }
-    renderTrackList(searchBox.value);
+ function toggleFavorite(index) {
+  if (favorites.has(index)) {
+    favorites.delete(index);
+  } else {
+    favorites.add(index);
   }
+  localStorage.setItem("favorites", JSON.stringify([...favorites]));
+  renderTrackList(searchBox.value);
+}
+
 
 function toggleFavMode() {
   isFavMode = !isFavMode;
@@ -759,7 +761,6 @@ function toggleFavMode() {
 
   renderTrackList(searchBox.value);
 }
-
 
   // 現在のプレイリスト
   function getCurrentTrackList() {
