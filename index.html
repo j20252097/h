@@ -567,42 +567,56 @@
   const playBtn = document.getElementById("play-btn");
 
   // tracks.json を読み込む
-  async function loadTracks() {
-    try {
-      const res = await fetch("tracks.json");
-      tracks = await res.json();
-      renderTrackList();
-    } catch (e) {
-      console.error("曲リスト読み込みエラー", e);
-    }
+async function loadTracks() {
+  try {
+    const res = await fetch("tracks.json");
+    console.log("HTTPステータス:", res.status);
+    if (!res.ok) throw new Error("HTTPエラー " + res.status);
+    tracks = await res.json();
+    console.log("✅ 読み込んだ曲数:", tracks.length);
+    renderTrackList();
+  } catch (e) {
+    console.error("曲リスト読み込みエラー", e);
   }
+}
+
 
   // 曲一覧を表示
- function renderTrackList(filter = "") {
+function renderTrackList(filter = "") {
   trackList.innerHTML = "";
 
-  tracks
-    .map((t, i) => ({ ...t, index: i })) // ← 元のindexを保持
+  const filtered = tracks
+    .map((t, i) => ({ ...t, index: i }))
     .filter(t => {
       if (isFavMode && !favorites.has(t.index)) return false;
       return (
         t.title.toLowerCase().includes(filter.toLowerCase()) ||
         t.artist.toLowerCase().includes(filter.toLowerCase())
       );
-    })
-    .forEach(track => {
-      const li = document.createElement("li");
-      li.innerHTML = `
-        <span>${track.title} - ${track.artist}</span>
-        <span>
-          <button onclick="toggleFavorite(${track.index});event.stopPropagation();">
-            ${favorites.has(track.index) ? "⭐" : "☆"}
-          </button>
-        </span>
-      `;
-      li.onclick = () => playTrack(track.index); // ← 元のindexを渡す
-      trackList.appendChild(li);
     });
+
+  if (filtered.length === 0) {
+    const li = document.createElement("li");
+    li.textContent = isFavMode ? "⭐ お気に入りがありません" : "曲が見つかりません";
+    li.style.textAlign = "center";
+    li.style.color = "#aaa";
+    trackList.appendChild(li);
+    return;
+  }
+
+  filtered.forEach(track => {
+    const li = document.createElement("li");
+    li.innerHTML = `
+      <span>${track.title} - ${track.artist}</span>
+      <span>
+        <button onclick="toggleFavorite(${track.index});event.stopPropagation();">
+          ${favorites.has(track.index) ? "⭐" : "☆"}
+        </button>
+      </span>
+    `;
+    li.onclick = () => playTrack(track.index);
+    trackList.appendChild(li);
+  });
 }
 
 
@@ -720,18 +734,23 @@
     renderTrackList(searchBox.value);
   }
 
-  function toggleFavMode() {
-    isFavMode = !isFavMode;
-    const btn = document.getElementById("favmode-btn");
-    if (isFavMode) {
-      btn.classList.add("active-btn");
-      btn.classList.remove("inactive-btn");
-    } else {
-      btn.classList.add("inactive-btn");
-      btn.classList.remove("active-btn");
-    }
-    renderTrackList(searchBox.value);
+function toggleFavMode() {
+  isFavMode = !isFavMode;
+  const btn = document.getElementById("favmode-btn");
+
+  if (isFavMode) {
+    btn.textContent = "⭐"; // お気に入りモードON
+    btn.classList.add("active-btn");
+    btn.classList.remove("inactive-btn");
+  } else {
+    btn.textContent = "☆"; // 通常モード
+    btn.classList.add("inactive-btn");
+    btn.classList.remove("active-btn");
   }
+
+  renderTrackList(searchBox.value);
+}
+
 
   // 現在のプレイリスト
   function getCurrentTrackList() {
