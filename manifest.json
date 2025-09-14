@@ -5,16 +5,25 @@
   "display": "standalone",
   "background_color": "#121212",
   "theme_color": "#1db954",
+  "orientation": "portrait",
+  "scope": "./",
+  "categories": ["music", "utilities", "productivity"],
+  "description": "電卓・メモ・音楽プレイヤー・画像生成などをまとめた便利アプリ。バックグラウンド再生対応。",
   "icons": [
     {
       "src": "https://raw.githubusercontent.com/j20252097/h/refs/heads/main/1718374862947-Di6UorBBZD.webp",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     },
     {
       "src": "https://raw.githubusercontent.com/j20252097/h/refs/heads/main/1718374862947-Di6UorBBZD.webp",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     }
+  ],
+  "permissions": [
+    "audio" 
   ]
 }
