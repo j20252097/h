@@ -3,6 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>Multi Tool</title>
 
   <!-- 🔗 統一アイコン -->
@@ -380,7 +382,7 @@
   <button id="favmode-btn" class="inactive-btn" onclick="toggleFavMode()">⭐</button>
 </div>
 
-  <audio id="audio"></audio>
+<audio id="audio" playsinline controls></audio>
 
   <script>
     // === 共通セクション切替 ===
@@ -632,20 +634,27 @@ function renderTrackList(filter = "") {
     audio.removeEventListener("loadeddata", handleLoaded);
   }
 
-  // 曲を再生
-  function playTrack(index) {
-    currentIndex = index;
+// 曲を再生
+function playTrack(index) {
+  currentIndex = index;
 
-    audio.pause();
-    audio.currentTime = 0;
-    audio.src = tracks[index].url;
+  audio.pause();
+  audio.currentTime = 0;
+  audio.src = tracks[index].url;
 
-    // 念のため古いリスナー削除 → 新しく登録
-    audio.removeEventListener("loadeddata", handleLoaded);
-    audio.addEventListener("loadeddata", handleLoaded);
+  // 念のため古いリスナー削除 → 新しく登録
+  audio.removeEventListener("loadeddata", handleLoaded);
+  audio.addEventListener("loadeddata", handleLoaded);
 
-    audio.load();
-  }
+  audio.load();
+
+  // 🎵 ミニプレイヤーに曲名・アーティストを表示
+  updateMiniTitle(tracks[index].title, tracks[index].artist);
+
+  // 📱 iOS Safari / Android のバックグラウンド再生に対応
+  updateMediaSession(tracks[index]);
+}
+
 
   function togglePlay() {
     if (isPlaying) {
@@ -791,6 +800,31 @@ function toggleFavMode() {
       miniTitle.textContent = text;
     }
   }
+    function updateMediaSession(track) {
+  if ('mediaSession' in navigator) {
+    navigator.mediaSession.metadata = new MediaMetadata({
+      title: track.title,
+      artist: track.artist,
+      artwork: [
+        { src: track.cover || "https://raw.githubusercontent.com/j20252097/h/refs/heads/main/1718374862947-Di6UorBBZD.webp", sizes: "512x512", type: "image/png" }
+      ]
+    });
+
+    navigator.mediaSession.setActionHandler("play", () => {
+      audio.play();
+      isPlaying = true;
+      playBtn.textContent = "⏸";
+    });
+    navigator.mediaSession.setActionHandler("pause", () => {
+      audio.pause();
+      isPlaying = false;
+      playBtn.textContent = "▶️";
+    });
+    navigator.mediaSession.setActionHandler("previoustrack", prevTrack);
+    navigator.mediaSession.setActionHandler("nexttrack", nextTrack);
+  }
+}
+
 </script>
 </body>
 </html>
