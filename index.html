@@ -388,11 +388,61 @@
 <!-- === 天気 === -->
 <section id="weather">
   <h2>天気</h2>
-  <input type="text" id="city-input" placeholder="例: 福岡県東区" style="padding:0.5rem; width:70%; max-width:400px; border-radius:6px; border:1px solid #1db954;">
+  <select id="pref-select" style="padding:0.5rem; width:70%; max-width:400px; border-radius:6px; border:1px solid #1db954;">
+    <option value="">都道府県を選択</option>
+    <option>北海道</option>
+    <option>青森県</option>
+    <option>岩手県</option>
+    <option>宮城県</option>
+    <option>秋田県</option>
+    <option>山形県</option>
+    <option>福島県</option>
+    <option>茨城県</option>
+    <option>栃木県</option>
+    <option>群馬県</option>
+    <option>埼玉県</option>
+    <option>千葉県</option>
+    <option>東京都</option>
+    <option>神奈川県</option>
+    <option>新潟県</option>
+    <option>富山県</option>
+    <option>石川県</option>
+    <option>福井県</option>
+    <option>山梨県</option>
+    <option>長野県</option>
+    <option>岐阜県</option>
+    <option>静岡県</option>
+    <option>愛知県</option>
+    <option>三重県</option>
+    <option>滋賀県</option>
+    <option>京都府</option>
+    <option>大阪府</option>
+    <option>兵庫県</option>
+    <option>奈良県</option>
+    <option>和歌山県</option>
+    <option>鳥取県</option>
+    <option>島根県</option>
+    <option>岡山県</option>
+    <option>広島県</option>
+    <option>山口県</option>
+    <option>徳島県</option>
+    <option>香川県</option>
+    <option>愛媛県</option>
+    <option>高知県</option>
+    <option>福岡県</option>
+    <option>佐賀県</option>
+    <option>長崎県</option>
+    <option>熊本県</option>
+    <option>大分県</option>
+    <option>宮崎県</option>
+    <option>鹿児島県</option>
+    <option>沖縄県</option>
+  </select>
   <button class="spotify-btn" onclick="getWeather()">検索</button>
   <div id="weather-result" style="margin-top:1rem;"></div>
   <button class="spotify-btn" onclick="showSection('home')">機能選択に戻る</button>
 </section>
+
 <!-- === 時計 === -->
 <section id="clock">
   <h2>時計</h2>
@@ -423,8 +473,8 @@
     <button class="spotify-btn" onclick="stopTimer()">停止</button>
     <button class="spotify-btn" onclick="resetTimer()">リセット</button>
     <div id="timer-display" style="margin-top:1rem; font-size:2rem; color:#1db954;">00:00:00</div>
-    <audio id="alarm-sound" src="https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg"></audio>
-  </div>
+   <audio id="alarm-sound" src="https://actions.google.com/sounds/v1/alarms/digital_watch_alarm_long.ogg"></audio>
+</div>
 
   <button class="spotify-btn" onclick="showSection('home')">機能選択に戻る</button>
 </section>
@@ -876,11 +926,11 @@ function toggleFavMode() {
 }
 // === 天気取得 ===
 async function getWeather() {
-  const city = document.getElementById("city-input").value;
-  if (!city) return alert("地域を入力してください");
+  const pref = document.getElementById("pref-select").value;
+  if (!pref) return alert("都道府県を選んでください");
 
-  const apiKey = "2850624f4f6039f3c0271e0fd2e02d0c"; // ★ ここに君のキー
-  const url = `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(city)}&appid=${apiKey}&units=metric&lang=ja`;
+  const apiKey = "2850624f4f6039f3c0271e0fd2e02d0c";
+  const url = `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(pref)}&appid=${apiKey}&units=metric&lang=ja`;
 
   const resultDiv = document.getElementById("weather-result");
   resultDiv.innerHTML = "読み込み中...";
@@ -905,20 +955,38 @@ async function getWeather() {
 // === 現在時刻（UTC+9固定） ===
 function updateClock() {
   const now = new Date();
-  // UTC+9 に変換
-  const jst = new Date(now.getTime() + (9 * 60 - now.getTimezoneOffset()) * 60000);
-  const year = jst.getFullYear();
-  const month = String(jst.getMonth() + 1).padStart(2, "0");
-  const day = String(jst.getDate()).padStart(2, "0");
-  const hour = String(jst.getHours()).padStart(2, "0");
-  const min = String(jst.getMinutes()).padStart(2, "0");
-  const sec = String(jst.getSeconds()).padStart(2, "0");
-  const week = ["日","月","火","水","木","金","土"][jst.getDay()];
+
+  // JST (アジア/東京)
+  const formatter = new Intl.DateTimeFormat("ja-JP", {
+    timeZone: "Asia/Tokyo",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+    weekday: "short"
+  });
+
+  const parts = formatter.formatToParts(now);
+  const get = (type) => parts.find(p => p.type === type)?.value;
+
+  const year   = get("year");
+  const month  = get("month");
+  const day    = get("day");
+  const hour   = get("hour");
+  const minute = get("minute");
+  const second = get("second");
+  const week   = get("weekday"); // ← これで「月」などが取れる
+
   document.getElementById("current-time").textContent =
-    `${year}/${month}/${day}/${hour}:${min}(${week})`;
+    `${year}/${month}/${day} ${hour}:${minute}:${second}(${week})`;
 }
 setInterval(updateClock, 1000);
 updateClock();
+
+
 
 // === 切り替え ===
 function switchMode(mode) {
