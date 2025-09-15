@@ -286,6 +286,8 @@
     <button class="spotify-btn" onclick="showSection('calculator')">電卓</button>
     <button class="spotify-btn" onclick="showSection('memo')">メモ</button>
     <button class="spotify-btn" onclick="showSection('player')">音楽プレイヤー</button>
+  <button class="spotify-btn" onclick="showSection('weather')">天気</button>
+  <button class="spotify-btn" onclick="showSection('clock')">時計</button>
   </header>
 
   <!-- === 画像生成 === -->
@@ -383,6 +385,49 @@
 </div>
 
 <audio id="audio" playsinline controls></audio>
+<!-- === 天気 === -->
+<section id="weather">
+  <h2>天気</h2>
+  <input type="text" id="city-input" placeholder="例: 福岡県東区" style="padding:0.5rem; width:70%; max-width:400px; border-radius:6px; border:1px solid #1db954;">
+  <button class="spotify-btn" onclick="getWeather()">検索</button>
+  <div id="weather-result" style="margin-top:1rem;"></div>
+  <button class="spotify-btn" onclick="showSection('home')">機能選択に戻る</button>
+</section>
+<!-- === 時計 === -->
+<section id="clock">
+  <h2>時計</h2>
+  <div id="current-time" style="font-size:1.5rem; margin-bottom:1rem; color:#1db954;"></div>
+
+  <!-- 切り替えタブ -->
+  <div style="margin:1rem 0;">
+    <button class="spotify-btn" onclick="switchMode('stopwatch')">⏱ ストップウォッチ</button>
+    <button class="spotify-btn" onclick="switchMode('timer')">⏲ タイマー</button>
+  </div>
+
+  <!-- ストップウォッチ -->
+  <div id="stopwatch-mode" style="display:none;">
+    <div id="stopwatch-display" style="font-size:2rem; margin:1rem 0; color:#1db954;">00:00:00.00</div>
+    <button class="spotify-btn" onclick="startStopwatch()">開始</button>
+    <button class="spotify-btn" onclick="stopStopwatch()">停止</button>
+    <button class="spotify-btn" onclick="resetStopwatch()">リセット</button>
+  </div>
+
+  <!-- タイマー -->
+  <div id="timer-mode" style="display:none;">
+    <div style="margin:0.5rem 0;">
+      <input type="number" id="t-hours" placeholder="時" min="0" style="width:80px; padding:0.5rem; border-radius:6px;">
+      <input type="number" id="t-minutes" placeholder="分" min="0" style="width:80px; padding:0.5rem; border-radius:6px;">
+      <input type="number" id="t-seconds" placeholder="秒" min="0" style="width:80px; padding:0.5rem; border-radius:6px;">
+    </div>
+    <button class="spotify-btn" onclick="startTimer()">開始</button>
+    <button class="spotify-btn" onclick="stopTimer()">停止</button>
+    <button class="spotify-btn" onclick="resetTimer()">リセット</button>
+    <div id="timer-display" style="margin-top:1rem; font-size:2rem; color:#1db954;">00:00:00</div>
+    <audio id="alarm-sound" src="https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg"></audio>
+  </div>
+
+  <button class="spotify-btn" onclick="showSection('home')">機能選択に戻る</button>
+</section>
 
   <script>
     // === 共通セクション切替 ===
@@ -829,7 +874,119 @@ function toggleFavMode() {
     navigator.mediaSession.setActionHandler("nexttrack", nextTrack);
   }
 }
+// === 天気取得 ===
+async function getWeather() {
+  const city = document.getElementById("city-input").value;
+  if (!city) return alert("地域を入力してください");
 
+  const apiKey = "2850624f4f6039f3c0271e0fd2e02d0c"; // ★ ここに君のキー
+  const url = `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(city)}&appid=${apiKey}&units=metric&lang=ja`;
+
+  const resultDiv = document.getElementById("weather-result");
+  resultDiv.innerHTML = "読み込み中...";
+
+  try {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error("取得失敗");
+    const data = await res.json();
+    resultDiv.innerHTML = `
+      <p><b>${data.name}</b> の天気</p>
+      <p>🌡 気温: ${data.main.temp}°C</p>
+      <p>☁️ 天気: ${data.weather[0].description}</p>
+      <p>💧 湿度: ${data.main.humidity}%</p>
+      <p>🍃 風速: ${data.wind.speed} m/s</p>
+    `;
+  } catch (err) {
+    resultDiv.innerHTML = "天気情報を取得できませんでした";
+    console.error(err);
+  }
+}
+
+// === 現在時刻（UTC+9固定） ===
+function updateClock() {
+  const now = new Date();
+  // UTC+9 に変換
+  const jst = new Date(now.getTime() + (9 * 60 - now.getTimezoneOffset()) * 60000);
+  const year = jst.getFullYear();
+  const month = String(jst.getMonth() + 1).padStart(2, "0");
+  const day = String(jst.getDate()).padStart(2, "0");
+  const hour = String(jst.getHours()).padStart(2, "0");
+  const min = String(jst.getMinutes()).padStart(2, "0");
+  const sec = String(jst.getSeconds()).padStart(2, "0");
+  const week = ["日","月","火","水","木","金","土"][jst.getDay()];
+  document.getElementById("current-time").textContent =
+    `${year}/${month}/${day}/${hour}:${min}(${week})`;
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// === 切り替え ===
+function switchMode(mode) {
+  document.getElementById("stopwatch-mode").style.display = mode === "stopwatch" ? "block" : "none";
+  document.getElementById("timer-mode").style.display = mode === "timer" ? "block" : "none";
+}
+
+// === ストップウォッチ ===
+let swInterval, swStart, swElapsed = 0;
+function startStopwatch() {
+  if (swInterval) return;
+  swStart = Date.now() - swElapsed;
+  swInterval = setInterval(() => {
+    swElapsed = Date.now() - swStart;
+    const hours = String(Math.floor(swElapsed / 3600000)).padStart(2, "0");
+    const minutes = String(Math.floor((swElapsed % 3600000) / 60000)).padStart(2, "0");
+    const seconds = String(Math.floor((swElapsed % 60000) / 1000)).padStart(2, "0");
+    const ms = String(Math.floor((swElapsed % 1000) / 10)).padStart(2, "0");
+    document.getElementById("stopwatch-display").textContent = `${hours}:${minutes}:${seconds}.${ms}`;
+  }, 10);
+}
+function stopStopwatch() {
+  clearInterval(swInterval);
+  swInterval = null;
+}
+function resetStopwatch() {
+  stopStopwatch();
+  swElapsed = 0;
+  document.getElementById("stopwatch-display").textContent = "00:00:00.00";
+}
+
+// === タイマー ===
+let timerInterval, timerRemaining = 0;
+function startTimer() {
+  if (timerInterval) return;
+  const h = parseInt(document.getElementById("t-hours").value) || 0;
+  const m = parseInt(document.getElementById("t-minutes").value) || 0;
+  const s = parseInt(document.getElementById("t-seconds").value) || 0;
+  if (h + m + s === 0 && timerRemaining === 0) return alert("時間を入力してください");
+  if (timerRemaining === 0) timerRemaining = h * 3600 + m * 60 + s;
+
+  const display = document.getElementById("timer-display");
+  const alarm = document.getElementById("alarm-sound");
+
+  timerInterval = setInterval(() => {
+    if (timerRemaining <= 0) {
+      clearInterval(timerInterval);
+      timerInterval = null;
+      alarm.play();
+      alert("タイマー終了！");
+      return;
+    }
+    timerRemaining--;
+    const hh = String(Math.floor(timerRemaining / 3600)).padStart(2, "0");
+    const mm = String(Math.floor((timerRemaining % 3600) / 60)).padStart(2, "0");
+    const ss = String(timerRemaining % 60).padStart(2, "0");
+    display.textContent = `${hh}:${mm}:${ss}`;
+  }, 1000);
+}
+function stopTimer() {
+  clearInterval(timerInterval);
+  timerInterval = null;
+}
+function resetTimer() {
+  stopTimer();
+  timerRemaining = 0;
+  document.getElementById("timer-display").textContent = "00:00:00";
+}
 </script>
 </body>
 </html>
