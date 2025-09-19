@@ -482,19 +482,17 @@
 <!-- === ミニゲーム Block Blast! === -->
 <section id="blockblast" class="container">
   <h2>🎮 Block Blast!</h2>
-  <p>ブロックをドラッグして8x8盤面に置き、縦横がそろうと消えます。置けなくなったら Game Over！</p>
-  
-  <div id="scoreboard">
-    <span id="score">スコア: 0</span> | 
-    <span id="highscore">ハイスコア: 0</span>
-  </div>
+  <p>下のフレーム内でプレイできます。</p>
 
-  <canvas id="gameCanvas" width="400" height="400"></canvas>
-  <div id="blocksArea"></div>
-  <div id="gameover" style="display:none; color:red; font-weight:bold; font-size:1.5em; margin:10px;">
-    Game Over!
-  </div>
-  <button onclick="resetGame()">リセット</button>
+  <iframe src="https://j20252097.github.io/b/" 
+          width="420" 
+          height="600" 
+          style="border:2px solid #1db954; border-radius:10px; background:#000;" 
+          allowfullscreen>
+  </iframe>
+
+  <br>
+  <button class="spotify-btn" onclick="showSection('home')">機能選択に戻る</button>
 </section>
   <script>
     // === 共通セクション切替 ===
@@ -1073,200 +1071,7 @@ function resetTimer() {
   document.getElementById("timer-display").textContent = "00:00:00";
 }
 
-// === 🎮 Block Blast! 完全版 ===
-const rows = 8, cols = 8, blockSize = 50;
-const canvas = document.getElementById("gameCanvas");
-const ctx = canvas?.getContext("2d");
-let grid = [], score = 0, highscore = 0;
-let currentBlocks = [];
 
-// localStorageから読み込み
-if (localStorage.getItem("blockblast_highscore")) {
-  highscore = parseInt(localStorage.getItem("blockblast_highscore"));
-}
-if (localStorage.getItem("blockblast_grid")) {
-  grid = JSON.parse(localStorage.getItem("blockblast_grid"));
-  score = parseInt(localStorage.getItem("blockblast_score")) || 0;
-} else {
-  resetGrid();
-}
-
-// 初期化
-function resetGrid() {
-  grid = Array.from({ length: rows }, () => Array(cols).fill(0));
-  score = 0;
-  document.getElementById("gameover").style.display = "none";
-  saveGame();
-}
-
-// スコア保存
-function saveGame() {
-  localStorage.setItem("blockblast_grid", JSON.stringify(grid));
-  localStorage.setItem("blockblast_score", score);
-  localStorage.setItem("blockblast_highscore", highscore);
-}
-
-// スコア更新
-function updateScore() {
-  document.getElementById("score").textContent = `スコア: ${score}`;
-  document.getElementById("highscore").textContent = `ハイスコア: ${highscore}`;
-}
-
-// ランダム色
-function randomColor() {
-  const colors = ["#1db954","#3498db","#e74c3c","#9b59b6","#f1c40f"];
-  return colors[Math.floor(Math.random() * colors.length)];
-}
-
-// ブロック形
-const shapes = [
-  [[1]], [[1],[1]], [[1,1]], [[1,1],[1,1]], [[1,1,1]],
-  [[1],[1],[1],[1],[1]],
-  [[1,0],[1,1]], [[0,1],[1,1]], [[1,0],[0,1]], [[0,1],[1,0]],
-  [[1,1,1],[0,1,0]], [[1,1,1],[1,0,0]], [[1,1,1],[0,0,1]], [[1,1,1],[0,1,1]],
-  [[1,1,1],[1,1,1],[1,1,1]]
-];
-
-// 新しいブロック生成
-function generateBlocks() {
-  currentBlocks = Array(3).fill(null).map(() => {
-    const shape = JSON.parse(JSON.stringify(shapes[Math.floor(Math.random()*shapes.length)]));
-    return { shape, color: randomColor() };
-  });
-  renderBlocksArea();
-  if (!canPlaceAnyBlock()) document.getElementById("gameover").style.display = "block";
-}
-
-// 下に表示するブロック描画
-function renderBlocksArea() {
-  const area = document.getElementById("blocksArea");
-  area.innerHTML = "";
-  currentBlocks.forEach((block, i) => {
-    if (!block) return;
-    const c = document.createElement("canvas");
-    c.width  = block.shape[0].length * 22;
-    c.height = block.shape.length * 22;
-    const bctx = c.getContext("2d");
-    block.shape.forEach((row,y)=>{
-      row.forEach((cell,x)=>{
-        if (cell) {
-          bctx.fillStyle = block.color;
-          bctx.fillRect(x*20,y*20,18,18);
-        }
-      });
-    });
-    c.draggable = true;
-    c.addEventListener("dragstart", e=>{
-      e.dataTransfer.setData("blockIndex", i);
-    });
-    area.appendChild(c);
-  });
-}
-
-// 盤面描画
-function drawBoard() {
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  for (let r=0;r<rows;r++) {
-    for (let c=0;c<cols;c++) {
-      ctx.fillStyle = grid[r][c] || "#222";
-      ctx.fillRect(c*blockSize, r*blockSize, blockSize-2, blockSize-2);
-    }
-  }
-  updateScore();
-  saveGame();
-}
-
-// ブロック配置
-function placeBlock(block, row, col) {
-  const shape = block.shape;
-  for (let r=0;r<shape.length;r++) {
-    for (let c=0;c<shape[r].length;c++) {
-      if (shape[r][c]) {
-        if (row+r >= rows || col+c >= cols || grid[row+r][col+c]) return false;
-      }
-    }
-  }
-  for (let r=0;r<shape.length;r++) {
-    for (let c=0;c<shape[r].length;c++) {
-      if (shape[r][c]) grid[row+r][col+c] = block.color;
-    }
-  }
-  clearLines();
-  score += shape.flat().filter(x=>x).length;
-  if (score > highscore) highscore = score;
-  saveGame();
-  updateScore();
-  return true;
-}
-
-// ライン消去
-function clearLines() {
-  for (let r=0;r<rows;r++) {
-    if (grid[r].every(cell=>cell!==0)) {
-      grid[r].fill(0); score += 50;
-    }
-  }
-  for (let c=0;c<cols;c++) {
-    if (grid.every(row=>row[c]!==0)) {
-      for (let r=0;r<rows;r++) grid[r][c]=0;
-      score += 50;
-    }
-  }
-}
-
-// ドロップイベント
-canvas?.addEventListener("dragover", e => e.preventDefault());
-canvas?.addEventListener("drop", e => {
-  e.preventDefault();
-  const rect = canvas.getBoundingClientRect();
-  const x = Math.floor((e.clientX - rect.left) / blockSize);
-  const y = Math.floor((e.clientY - rect.top) / blockSize);
-  const idx = e.dataTransfer.getData("blockIndex");
-  const block = currentBlocks[idx];
-  if (block && placeBlock(block, y, x)) {
-    currentBlocks[idx] = null;
-    if (currentBlocks.every(b => b === null)) generateBlocks();
-    drawBoard();
-    if (!canPlaceAnyBlock()) document.getElementById("gameover").style.display = "block";
-  }
-});
-
-// 配置可能チェック
-function canPlaceAnyBlock() {
-  return currentBlocks.some(b => {
-    if (!b) return false;
-    for (let r=0;r<rows;r++) for (let c=0;c<cols;c++) if (placeBlockTest(b,r,c)) return true;
-    return false;
-  });
-}
-
-// 仮置きチェック
-function placeBlockTest(block, row, col) {
-  const shape = block.shape;
-  for (let r=0;r<shape.length;r++) {
-    for (let c=0;c<shape[r].length;c++) {
-      if (shape[r][c]) {
-        if (row+r >= rows || col+c >= cols || grid[row+r][col+c]) return false;
-      }
-    }
-  }
-  return true;
-}
-
-// リセット
-function resetGame() {
-  resetGrid();
-  generateBlocks();
-  drawBoard();
-  updateScore();
-}
-
-// 起動時
-if (canvas) {
-  drawBoard();
-  generateBlocks();
-  updateScore();
-}
 </script>
 </body>
 </html>
