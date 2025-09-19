@@ -288,7 +288,7 @@
     <button class="spotify-btn" onclick="showSection('player')">音楽プレイヤー</button>
   <button class="spotify-btn" onclick="showSection('weather')">天気</button>
   <button class="spotify-btn" onclick="showSection('clock')">時計</button>
-    <button class="spotify-btn" onclick="showSection('minigame')">ミニゲーム</button>
+    <button class="spotify-btn" onclick="showSection('blockblast')">ミニゲーム</button>
   </header>
 
   <!-- === 画像生成 === -->
@@ -479,25 +479,23 @@
 
   <button class="spotify-btn" onclick="showSection('home')">機能選択に戻る</button>
 </section>
-<!-- ② ミニゲームセクション追加 -->
-<section id="minigame">
-  <h2>Block Blast!</h2>
-  <canvas id="gameCanvas" width="400" height="400" 
-          style="background:#111; border:2px solid #1db954; border-radius:8px;"></canvas>
+<!-- === ミニゲーム Block Blast! === -->
+<section id="blockblast" class="container">
+  <h2>🎮 Block Blast!</h2>
+  <p>ブロックをドラッグして8x8盤面に置き、縦横がそろうと消えます。置けなくなったら Game Over！</p>
   
-  <div id="blocksArea" style="margin-top:1rem; display:flex; justify-content:center; gap:1rem;">
-    <!-- 下に3つのブロックが自動生成される -->
+  <div id="scoreboard">
+    <span id="score">スコア: 0</span> | 
+    <span id="highscore">ハイスコア: 0</span>
   </div>
 
-  <p id="score" style="margin-top:1rem; color:#1db954;">スコア: 0</p>
-  <p id="highscore" style="margin-top:0.5rem; color:#f39c12;">ハイスコア: 0</p>
-
-  <p id="gameover" style="margin-top:1rem; color:red; font-weight:bold; display:none;">Game Over!</p>
-
-  <button class="spotify-btn" onclick="resetGame()">リセット</button>
-  <button class="spotify-btn" onclick="showSection('home')">機能選択に戻る</button>
+  <canvas id="gameCanvas" width="400" height="400"></canvas>
+  <div id="blocksArea"></div>
+  <div id="gameover" style="display:none; color:red; font-weight:bold; font-size:1.5em; margin:10px;">
+    Game Over!
+  </div>
+  <button onclick="resetGame()">リセット</button>
 </section>
-
   <script>
     // === 共通セクション切替 ===
     function showSection(id) {
@@ -1120,56 +1118,50 @@ function randomColor() {
   return colors[Math.floor(Math.random() * colors.length)];
 }
 
-// ブロックの形パターン
+// ブロック形
 const shapes = [
-  [[1]],                // 1マス
-  [[1],[1]],            // 縦2
-  [[1,1]],              // 横2
-  [[1,1],[1,1]],        // 2×2
-  [[1,1,1]],            // 横3
-  [[1],[1],[1],[1],[1]],// 縦5
-  [[1,0],[1,1]],        // L字
-  [[1,1,1],[0,1,0]],    // T字
-  [[1,1,1],[1,1,1],[1,1,1]]  // 3×3
+  [[1]], [[1],[1]], [[1,1]], [[1,1],[1,1]], [[1,1,1]],
+  [[1],[1],[1],[1],[1]],
+  [[1,0],[1,1]], [[0,1],[1,1]], [[1,0],[0,1]], [[0,1],[1,0]],
+  [[1,1,1],[0,1,0]], [[1,1,1],[1,0,0]], [[1,1,1],[0,0,1]], [[1,1,1],[0,1,1]],
+  [[1,1,1],[1,1,1],[1,1,1]]
 ];
 
+// 新しいブロック生成
 function generateBlocks() {
+  currentBlocks = Array(3).fill(null).map(() => {
+    const shape = JSON.parse(JSON.stringify(shapes[Math.floor(Math.random()*shapes.length)]));
+    return { shape, color: randomColor() };
+  });
+  renderBlocksArea();
+  if (!canPlaceAnyBlock()) document.getElementById("gameover").style.display = "block";
+}
+
+// 下に表示するブロック描画
+function renderBlocksArea() {
   const area = document.getElementById("blocksArea");
   area.innerHTML = "";
-  currentBlocks = [];
-
-  for (let i = 0; i < 3; i++) {
-    const shape = JSON.parse(JSON.stringify(shapes[Math.floor(Math.random() * shapes.length)]));
-    const color = randomColor();
-    currentBlocks.push({ shape, color });
-
-    const blockDiv = document.createElement("canvas");
-    blockDiv.width  = shape[0].length * 22;
-    blockDiv.height = shape.length * 22;
-    const bctx = blockDiv.getContext("2d");
-
-    shape.forEach((row, r) => {
-      row.forEach((cell, c) => {
+  currentBlocks.forEach((block, i) => {
+    if (!block) return;
+    const c = document.createElement("canvas");
+    c.width  = block.shape[0].length * 22;
+    c.height = block.shape.length * 22;
+    const bctx = c.getContext("2d");
+    block.shape.forEach((row,y)=>{
+      row.forEach((cell,x)=>{
         if (cell) {
-          bctx.fillStyle = color;
-          bctx.fillRect(c*20, r*20, 18, 18);
+          bctx.fillStyle = block.color;
+          bctx.fillRect(x*20,y*20,18,18);
         }
       });
     });
-
-    blockDiv.draggable = true;
-    blockDiv.ondragstart = (e) => {
+    c.draggable = true;
+    c.addEventListener("dragstart", e=>{
       e.dataTransfer.setData("blockIndex", i);
-    };
-    area.appendChild(blockDiv);
-  }
-
-  // 新しいブロックが置けないならゲームオーバー
-  if (!canPlaceAnyBlock()) {
-    document.getElementById("gameover").style.display = "block";
-  }
+    });
+    area.appendChild(c);
+  });
 }
-
 
 // 盤面描画
 function drawBoard() {
@@ -1180,6 +1172,8 @@ function drawBoard() {
       ctx.fillRect(c*blockSize, r*blockSize, blockSize-2, blockSize-2);
     }
   }
+  updateScore();
+  saveGame();
 }
 
 // ブロック配置
@@ -1188,18 +1182,13 @@ function placeBlock(block, row, col) {
   for (let r=0;r<shape.length;r++) {
     for (let c=0;c<shape[r].length;c++) {
       if (shape[r][c]) {
-        if (row+r >= rows || col+c >= cols || grid[row+r][col+c]) {
-          return false; // 配置できない
-        }
+        if (row+r >= rows || col+c >= cols || grid[row+r][col+c]) return false;
       }
     }
   }
-  // 配置
   for (let r=0;r<shape.length;r++) {
     for (let c=0;c<shape[r].length;c++) {
-      if (shape[r][c]) {
-        grid[row+r][col+c] = block.color;
-      }
+      if (shape[r][c]) grid[row+r][col+c] = block.color;
     }
   }
   clearLines();
@@ -1210,27 +1199,22 @@ function placeBlock(block, row, col) {
   return true;
 }
 
-// 行列消去
+// ライン消去
 function clearLines() {
   for (let r=0;r<rows;r++) {
     if (grid[r].every(cell=>cell!==0)) {
-      grid[r].fill(0);
-      score += 50;
+      grid[r].fill(0); score += 50;
     }
   }
   for (let c=0;c<cols;c++) {
-    let full = true;
-    for (let r=0;r<rows;r++) {
-      if (!grid[r][c]) { full=false; break; }
-    }
-    if (full) {
+    if (grid.every(row=>row[c]!==0)) {
       for (let r=0;r<rows;r++) grid[r][c]=0;
       score += 50;
     }
   }
 }
 
-// ドラッグドロップで盤面に置く
+// ドロップイベント
 canvas?.addEventListener("dragover", e => e.preventDefault());
 canvas?.addEventListener("drop", e => {
   e.preventDefault();
@@ -1239,47 +1223,30 @@ canvas?.addEventListener("drop", e => {
   const y = Math.floor((e.clientY - rect.top) / blockSize);
   const idx = e.dataTransfer.getData("blockIndex");
   const block = currentBlocks[idx];
-
   if (block && placeBlock(block, y, x)) {
     currentBlocks[idx] = null;
-
-    // 全部使ったら再生成
-    if (currentBlocks.every(b => b === null)) {
-      generateBlocks();
-    }
-
+    if (currentBlocks.every(b => b === null)) generateBlocks();
     drawBoard();
-
-    // 置いた直後に Game Over 判定
-    if (!canPlaceAnyBlock()) {
-      document.getElementById("gameover").style.display = "block";
-    }
+    if (!canPlaceAnyBlock()) document.getElementById("gameover").style.display = "block";
   }
 });
 
-
-// 任意のブロックを置けるかチェック
+// 配置可能チェック
 function canPlaceAnyBlock() {
-  for (let b of currentBlocks) {
-    if (!b) continue;
-    for (let r=0;r<rows;r++) {
-      for (let c=0;c<cols;c++) {
-        if (placeBlockTest(b, r, c)) return true;
-      }
-    }
-  }
-  return false;
+  return currentBlocks.some(b => {
+    if (!b) return false;
+    for (let r=0;r<rows;r++) for (let c=0;c<cols;c++) if (placeBlockTest(b,r,c)) return true;
+    return false;
+  });
 }
 
-// 仮置きテスト
+// 仮置きチェック
 function placeBlockTest(block, row, col) {
   const shape = block.shape;
   for (let r=0;r<shape.length;r++) {
     for (let c=0;c<shape[r].length;c++) {
       if (shape[r][c]) {
-        if (row+r >= rows || col+c >= cols || grid[row+r][col+c]) {
-          return false;
-        }
+        if (row+r >= rows || col+c >= cols || grid[row+r][col+c]) return false;
       }
     }
   }
@@ -1300,7 +1267,6 @@ if (canvas) {
   generateBlocks();
   updateScore();
 }
-
 </script>
 </body>
 </html>
