@@ -1133,24 +1133,21 @@ const shapes = [
   [[1,1,1],[1,1,1],[1,1,1]]  // 3×3
 ];
 
-// 新しい3つのブロックを出す
 function generateBlocks() {
   const area = document.getElementById("blocksArea");
-  // まだ置けるブロックが残っている場合は追加しない
-  if (currentBlocks.some(b => b)) return;
-
   area.innerHTML = "";
   currentBlocks = [];
+
   for (let i = 0; i < 3; i++) {
     const shape = JSON.parse(JSON.stringify(shapes[Math.floor(Math.random() * shapes.length)]));
     const color = randomColor();
     currentBlocks.push({ shape, color });
 
     const blockDiv = document.createElement("canvas");
-    blockDiv.width = 100; blockDiv.height = 100;
+    blockDiv.width  = shape[0].length * 22;
+    blockDiv.height = shape.length * 22;
     const bctx = blockDiv.getContext("2d");
 
-    // 描画
     shape.forEach((row, r) => {
       row.forEach((cell, c) => {
         if (cell) {
@@ -1159,6 +1156,7 @@ function generateBlocks() {
         }
       });
     });
+
     blockDiv.draggable = true;
     blockDiv.ondragstart = (e) => {
       e.dataTransfer.setData("blockIndex", i);
@@ -1171,6 +1169,7 @@ function generateBlocks() {
     document.getElementById("gameover").style.display = "block";
   }
 }
+
 
 // 盤面描画
 function drawBoard() {
