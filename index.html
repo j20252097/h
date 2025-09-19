@@ -1239,12 +1239,24 @@ canvas?.addEventListener("drop", e => {
   const y = Math.floor((e.clientY - rect.top) / blockSize);
   const idx = e.dataTransfer.getData("blockIndex");
   const block = currentBlocks[idx];
+
   if (block && placeBlock(block, y, x)) {
     currentBlocks[idx] = null;
-    generateBlocks(); // 全部置いたら再生成
+
+    // 全部使ったら再生成
+    if (currentBlocks.every(b => b === null)) {
+      generateBlocks();
+    }
+
+    drawBoard();
+
+    // 置いた直後に Game Over 判定
+    if (!canPlaceAnyBlock()) {
+      document.getElementById("gameover").style.display = "block";
+    }
   }
-  drawBoard();
 });
+
 
 // 任意のブロックを置けるかチェック
 function canPlaceAnyBlock() {
