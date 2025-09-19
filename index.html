@@ -1095,7 +1095,45 @@ function resetTimer() {
   document.getElementById("timer-display").textContent = "00:00:00";
 }
 
+>
+// === 広告除去試行 ===
+(function () {
+  // ブロックしたいドメイン
+  const blockedHosts = [
+    "cdn.bncloudfl.com",
+    "playhubconnect.com",
+    "avalanchetremorunfilled.com"
+  ];
 
+  function removeAds() {
+    // 画像・動画・iframe をチェック
+    document.querySelectorAll("img, video, iframe, a, div").forEach(el => {
+      const attrs = ["src", "href", "data-src"];
+      for (let attr of attrs) {
+        const val = el[attr] || el.getAttribute(attr) || "";
+        if (blockedHosts.some(host => val.includes(host))) {
+          el.remove();
+          break;
+        }
+      }
+    });
+  }
+
+  // 最初に実行
+  removeAds();
+
+  // DOMが変わるたびに監視して広告を削除
+  const observer = new MutationObserver(removeAds);
+  observer.observe(document.body, { childList: true, subtree: true });
+
+  // MangaRaw iframe に style を注入（広告領域を隠す）
+  const mangarawFrame = document.querySelector("#mangaraw iframe");
+  if (mangarawFrame) {
+    mangarawFrame.setAttribute("sandbox", "allow-scripts allow-same-origin allow-forms"); 
+    // ↑ 広告制御の試み（完全には効かない可能性あり）
+    mangarawFrame.style.cssText += "filter: none !important;"; 
+  }
+})();
 </script>
 </body>
 </html>
