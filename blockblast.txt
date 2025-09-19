@@ -1,0 +1,1102 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Multi Tool</title>
+
+  <!-- 🔗 統一アイコン -->
+  <link rel="icon" type="image/png" href="https://raw.githubusercontent.com/j20252097/h/refs/heads/main/1718374862947-Di6UorBBZD.webp">
+  <link rel="apple-touch-icon" href="https://raw.githubusercontent.com/j20252097/h/refs/heads/main/1718374862947-Di6UorBBZD.webp">
+  <link rel="apple-touch-icon-precomposed" href="https://raw.githubusercontent.com/j20252097/h/refs/heads/main/1718374862947-Di6UorBBZD.webp">
+  <meta name="theme-color" content="#121212">
+
+  <!-- 📱 Android用 manifest -->
+  <link rel="manifest" href="manifest.json">
+  <style>
+    body {
+      margin: 0;
+      font-family: "Segoe UI", sans-serif;
+      background-color: #121212;
+      color: #fff;
+      text-align: center;
+    }
+
+    header {
+      padding: 2rem 1rem;
+    }
+
+    h1, h2 {
+      color: #1db954;
+      margin-bottom: 1rem;
+    }
+
+    .spotify-btn {
+      background-color: #1db954;
+      border: none;
+      color: #fff;
+      padding: 1rem 2rem;
+      font-size: 1.1rem;
+      border-radius: 50px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+      margin: 0.3rem;
+    }
+    .spotify-btn:hover {
+      background-color: #17a74a;
+    }
+
+    section {
+      display: none;
+      margin: 2rem auto;
+      max-width: 900px;
+      padding: 1rem;
+    }
+    section.active {
+      display: block;
+    }
+
+    /* 画像生成 */
+    #generate-btn {
+      background: #1db954;
+      color: #fff;
+      cursor: pointer;
+      border-radius: 30px;
+      padding: 0.6rem 1.2rem;
+    }
+    #generate-btn:hover {
+      background: #17a74a;
+    }
+
+    .frame {
+      margin: 1.5rem auto;
+      padding: 10px;
+      border: 5px solid #1db954;
+      border-radius: 12px;
+      max-width: 90%;
+      background: #000;
+      box-shadow: 0 0 20px rgba(29, 185, 84, 0.5);
+      min-height: 200px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .frame img {
+      width: 100%;
+      height: auto;
+      max-height: 70vh;
+      object-fit: contain;
+      border-radius: 8px;
+    }
+    .loading {
+      color: #1db954;
+      font-size: 1.2rem;
+      font-weight: bold;
+      animation: blink 1.5s infinite;
+    }
+    @keyframes blink { 50% { opacity: 0.5; } }
+
+    /* 電卓 */
+    .calculator {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      max-width: 400px;
+      margin: 0 auto;
+    }
+    .calc-display {
+      grid-column: span 4;
+      background: #000;
+      color: #1db954;
+      font-size: 2rem;
+      padding: 1rem;
+      text-align: right;
+      border-radius: 8px;
+      overflow-x: auto;
+      box-shadow: inset 0 0 10px rgba(29, 185, 84, 0.4);
+    }
+    .calc-display[contenteditable="true"] {
+      outline: none;
+      cursor: text;
+    }
+    .calc-btn {
+      background: #282828;
+      color: #fff;
+      border: none;
+      padding: 1.2rem;
+      font-size: 1.2rem;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.2s ease;
+    }
+    .calc-btn:hover {
+      background: #1db954;
+      color: #000;
+    }
+    .calc-btn.operator {
+      background: #444;
+    }
+    .calc-btn.operator:hover {
+      background: #666;
+      color: #fff;
+    }
+
+    /* メモ */
+    #memo textarea {
+      width: 90%;
+      max-width: 600px;
+      padding: 0.6rem;
+      border-radius: 8px;
+      border: 1px solid #1db954;
+      background: #000;
+      color: #fff;
+    }
+    #memo-list div {
+      border: 1px solid #1db954;
+      padding: 10px;
+      margin: 10px auto;
+      border-radius: 8px;
+      background: #181818;
+      max-width: 600px;
+      text-align: left;
+    }
+    #memo-list img {
+      max-width: 100%;
+      margin-top: 8px;
+      border-radius: 6px;
+    }
+
+    /* 音楽プレイヤー */
+    #player {
+      background: #181818;
+      border-radius: 12px;
+      padding: 1rem;
+    }
+    #track-search {
+      padding: 0.5rem;
+      width: 80%;
+      max-width: 500px;
+      border-radius: 6px;
+      border: 1px solid #1db954;
+      margin-bottom: 1rem;
+    }
+    #track-list {
+      list-style: none;
+      padding: 0;
+    }
+    #track-list li {
+      padding: 0.8rem;
+      margin: 0.3rem auto;
+      background: #282828;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.2s ease;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    #track-list li:hover {
+      background: #1db954;
+      color: #000;
+    }
+    .favorite {
+      color: gold;
+      margin-left: 8px;
+    }
+/* 🎶 ミニプレイヤー */
+#mini-player {
+  position: fixed;
+  bottom: 8px;
+  right: 8px;
+  background: rgba(40, 40, 40, 0.85); /* 半透明 */
+  backdrop-filter: blur(6px);          /* ガラス風 */
+  border-radius: 10px;
+  padding: 6px 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 0 8px rgba(0,0,0,0.6);
+  z-index: 1000;
+}
+
+#mini-player img {
+  width: 30px;
+  height: 30px;
+  border-radius: 4px;
+}
+
+#mini-player button {
+  background: none;
+  border: none;
+  color: #1db954;
+  cursor: pointer;
+  font-size: 1rem;
+  padding: 2px;
+}
+
+/* 🎵 曲名スクロール（右→左に統一） */
+#mini-title {
+  position: relative;
+  overflow: hidden;
+  white-space: nowrap;
+  max-width: 150px; /* コンパクトに */
+  font-size: 0.9rem;
+  color: #fff;
+}
+
+#mini-title span {
+  display: inline-block;
+  padding-left: 100%;
+  animation: scroll-title linear infinite;
+}
+
+@keyframes scroll-title {
+  from { transform: translateX(100%); }  /* 右から */
+  to   { transform: translateX(-100%); } /* 左へ */
+}
+
+/* 📱 スマホ対応 */
+@media (max-width: 768px) {
+  h1, h2 { font-size: 1.4rem; }
+  .spotify-btn {
+    width: 80%;
+    font-size: 1rem;
+    padding: 0.8rem 1rem;
+  }
+  .frame { max-width: 95%; }
+  .calc-display { font-size: 1.5rem; }
+  #mini-title { max-width: 120px; } /* スマホ用にさらに縮小 */
+}
+
+/* 再生ボタンの状態 */
+.active-btn {
+  color: #1db954 !important; /* 緑 */
+}
+.inactive-btn {
+  color: #777 !important;   /* 灰色 */
+}
+
+
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Multi Tool</h1>
+    <button class="spotify-btn" onclick="showSection('image-generator')">画像生成</button>
+    <button class="spotify-btn" onclick="showSection('calculator')">電卓</button>
+    <button class="spotify-btn" onclick="showSection('memo')">メモ</button>
+    <button class="spotify-btn" onclick="showSection('player')">音楽プレイヤー</button>
+  <button class="spotify-btn" onclick="showSection('weather')">天気</button>
+  <button class="spotify-btn" onclick="showSection('clock')">時計</button>
+    <button class="spotify-btn" onclick="showSection('blockblast')">blockblast</button>
+    <button class="spotify-btn" onclick="showSection('2048')">2048</button>
+    <button class="spotify-btn" onclick="showSection('mangaraw')">MangaRaw</button>
+  </header>
+
+  <!-- === 画像生成 === -->
+  <section id="image-generator">
+    <h2>画像生成（R-18）</h2>
+    <div class="controls">
+      <select id="category">
+        <option value="hentai">Hentai</option>
+        <option value="boobs">Boobs</option>
+        <option value="paizuri">Paizuri</option>
+        <option value="anal">Anal</option>
+        <option value="pussy">Pussy</option>
+        <option value="gonewild">Gonewild</option>
+        <option value="ass">Ass</option>
+        <option value="4k">4K</option>
+        <option value="hanal">Hentai Anal</option>
+        <option value="pgif">Hentai GIF</option>
+      </select>
+      <button id="generate-btn" onclick="generateImage()">生成</button>
+    </div>
+    <div class="frame" id="image-frame" style="display:none;">
+      <span class="loading" id="loading-text" style="display:none;">画像生成中...</span>
+      <img id="generated-img" src="" alt="生成画像" style="display:none;">
+    </div>
+    <button class="spotify-btn" onclick="showSection('home')">機能選択に戻る</button>
+  </section>
+
+  <!-- === 電卓 === -->
+  <section id="calculator">
+    <h2>関数電卓</h2>
+    <div class="calculator">
+      <div class="calc-display" id="calc-display" contenteditable="true">0</div>
+      <button class="calc-btn operator" onclick="clearDisplay()">AC</button>
+      <button class="calc-btn operator" onclick="deleteChar()">⌫</button>
+      <button class="calc-btn operator" onclick="square()">x²</button>
+      <button class="calc-btn operator" onclick="insert('/')">÷</button>
+      <button class="calc-btn" onclick="insert('7')">7</button>
+      <button class="calc-btn" onclick="insert('8')">8</button>
+      <button class="calc-btn" onclick="insert('9')">9</button>
+      <button class="calc-btn operator" onclick="insert('*')">×</button>
+      <button class="calc-btn" onclick="insert('4')">4</button>
+      <button class="calc-btn" onclick="insert('5')">5</button>
+      <button class="calc-btn" onclick="insert('6')">6</button>
+      <button class="calc-btn operator" onclick="insert('-')">-</button>
+      <button class="calc-btn" onclick="insert('1')">1</button>
+      <button class="calc-btn" onclick="insert('2')">2</button>
+      <button class="calc-btn" onclick="insert('3')">3</button>
+      <button class="calc-btn operator" onclick="insert('+')">+</button>
+      <button class="calc-btn" onclick="insert('0')">0</button>
+      <button class="calc-btn" onclick="insert('.')">.</button>
+      <button class="calc-btn operator" onclick="calculate()">=</button>
+      <button class="calc-btn operator" onclick="insert('sqrt()')">√</button>
+      <button class="calc-btn operator" onclick="insert('sin()')">sin</button>
+      <button class="calc-btn operator" onclick="insert('cos()')">cos</button>
+      <button class="calc-btn operator" onclick="insert('tan()')">tan</button>
+      <button class="calc-btn operator" onclick="insert('log()')">log</button>
+    </div>
+    <button class="spotify-btn" onclick="showSection('home')">機能選択に戻る</button>
+  </section>
+
+  <!-- === メモ === -->
+  <section id="memo">
+    <h2>メモ</h2>
+    <textarea id="memo-text" placeholder="ここにメモを書いてください..." rows="4"></textarea><br>
+    <input type="file" id="memo-image" accept="image/*"><br><br>
+    <button class="spotify-btn" onclick="saveMemo()">保存</button>
+
+    <!-- 🔍 検索 -->
+    <div style="margin-top:1rem;">
+      <input type="text" id="search-box" placeholder="メモを検索..." 
+             style="padding:0.5rem; width:80%; max-width:500px; border-radius:6px; border:1px solid #1db954;">
+    </div>
+
+    <div id="memo-list"></div>
+    <button class="spotify-btn" onclick="showSection('home')">機能選択に戻る</button>
+  </section>
+
+  <!-- === 音楽プレイヤー === -->
+  <section id="player">
+    <h2>音楽プレイヤー</h2>
+    <input type="text" id="track-search" placeholder="曲を検索...">
+    <ul id="track-list"></ul>
+    <button class="spotify-btn" onclick="showSection('home')">機能選択に戻る</button>
+  </section>
+
+<div id="mini-player">
+  <img src="https://raw.githubusercontent.com/j20252097/h/refs/heads/main/1718374862947-Di6UorBBZD.webp" alt="art">
+  <div id="mini-title">再生中なし</div>
+  <button id="prev-btn" onclick="prevTrack()">⏮</button>
+  <button id="play-btn" onclick="togglePlay()">▶️</button>
+  <button id="next-btn" onclick="nextTrack()">⏭</button>
+  <button id="shuffle-btn" class="inactive-btn" onclick="toggleMode()">🔀</button>
+  <button id="repeat-btn" class="inactive-btn" onclick="toggleRepeat()">🔁</button>
+  <button id="favmode-btn" class="inactive-btn" onclick="toggleFavMode()">⭐</button>
+</div>
+
+<audio id="audio" playsinline controls></audio>
+<!-- === 天気 === -->
+<section id="weather">
+  <h2>天気</h2>
+  <select id="pref-select" style="padding:0.5rem; width:70%; max-width:400px; border-radius:6px; border:1px solid #1db954;">
+    <option value="">都道府県を選択</option>
+    <option>北海道</option>
+    <option>青森県</option>
+    <option>岩手県</option>
+    <option>宮城県</option>
+    <option>秋田県</option>
+    <option>山形県</option>
+    <option>福島県</option>
+    <option>茨城県</option>
+    <option>栃木県</option>
+    <option>群馬県</option>
+    <option>埼玉県</option>
+    <option>千葉県</option>
+    <option>東京都</option>
+    <option>神奈川県</option>
+    <option>新潟県</option>
+    <option>富山県</option>
+    <option>石川県</option>
+    <option>福井県</option>
+    <option>山梨県</option>
+    <option>長野県</option>
+    <option>岐阜県</option>
+    <option>静岡県</option>
+    <option>愛知県</option>
+    <option>三重県</option>
+    <option>滋賀県</option>
+    <option>京都府</option>
+    <option>大阪府</option>
+    <option>兵庫県</option>
+    <option>奈良県</option>
+    <option>和歌山県</option>
+    <option>鳥取県</option>
+    <option>島根県</option>
+    <option>岡山県</option>
+    <option>広島県</option>
+    <option>山口県</option>
+    <option>徳島県</option>
+    <option>香川県</option>
+    <option>愛媛県</option>
+    <option>高知県</option>
+    <option>福岡県</option>
+    <option>佐賀県</option>
+    <option>長崎県</option>
+    <option>熊本県</option>
+    <option>大分県</option>
+    <option>宮崎県</option>
+    <option>鹿児島県</option>
+    <option>沖縄県</option>
+  </select>
+  <button class="spotify-btn" onclick="getWeather()">検索</button>
+  <div id="weather-result" style="margin-top:1rem;"></div>
+  <button class="spotify-btn" onclick="showSection('home')">機能選択に戻る</button>
+</section>
+
+<!-- === 時計 === -->
+<section id="clock">
+  <h2>時計</h2>
+  <div id="current-time" style="font-size:1.5rem; margin-bottom:1rem; color:#1db954;"></div>
+
+  <!-- 切り替えタブ -->
+  <div style="margin:1rem 0;">
+    <button class="spotify-btn" onclick="switchMode('stopwatch')">⏱ ストップウォッチ</button>
+    <button class="spotify-btn" onclick="switchMode('timer')">⏲ タイマー</button>
+  </div>
+
+  <!-- ストップウォッチ -->
+  <div id="stopwatch-mode" style="display:none;">
+    <div id="stopwatch-display" style="font-size:2rem; margin:1rem 0; color:#1db954;">00:00:00.00</div>
+    <button class="spotify-btn" onclick="startStopwatch()">開始</button>
+    <button class="spotify-btn" onclick="stopStopwatch()">停止</button>
+    <button class="spotify-btn" onclick="resetStopwatch()">リセット</button>
+  </div>
+
+  <!-- タイマー -->
+  <div id="timer-mode" style="display:none;">
+    <div style="margin:0.5rem 0;">
+      <input type="number" id="t-hours" placeholder="時" min="0" style="width:80px; padding:0.5rem; border-radius:6px;">
+      <input type="number" id="t-minutes" placeholder="分" min="0" style="width:80px; padding:0.5rem; border-radius:6px;">
+      <input type="number" id="t-seconds" placeholder="秒" min="0" style="width:80px; padding:0.5rem; border-radius:6px;">
+    </div>
+    <button class="spotify-btn" onclick="startTimer()">開始</button>
+    <button class="spotify-btn" onclick="stopTimer()">停止</button>
+    <button class="spotify-btn" onclick="resetTimer()">リセット</button>
+    <div id="timer-display" style="margin-top:1rem; font-size:2rem; color:#1db954;">00:00:00</div>
+   <audio id="alarm-sound" src="https://actions.google.com/sounds/v1/alarms/digital_watch_alarm_long.ogg"></audio>
+</div>
+
+  <button class="spotify-btn" onclick="showSection('home')">機能選択に戻る</button>
+</section>
+<!-- === ミニゲーム Block Blast! === -->
+<section id="blockblast" class="container">
+  <h2>🎮 Block Blast!</h2>
+  <iframe src="blockblast/index.html"
+          width="420"
+          height="600"
+          style="border:2px solid #1db954; border-radius:10px; background:#000;"
+          allowfullscreen>
+  </iframe>
+  <br>
+  <button class="spotify-btn" onclick="showSection('home')">機能選択に戻る</button>
+</section>
+  <!-- === ミニゲーム 2048 === -->
+<section id="2048" class="container">
+  <h2>🎮 2048</h2>
+  <iframe src="2048/index.html"
+          width="420"
+          height="600"
+          style="border:2px solid #1db954; border-radius:10px; background:#000;"
+          allowfullscreen>
+  </iframe>
+  <br>
+  <button class="spotify-btn" onclick="showSection('home')">機能選択に戻る</button>
+</section>
+  <!-- === MangaRaw iframe === -->
+<section id="mangaraw" class="container">
+  <h2>📖 MangaRaw</h2>
+  <iframe src="https://mangaraw.ac/"
+          width="100%"
+          height="800"
+          style="border:2px solid #1db954; border-radius:10px; background:#fff;"
+          allowfullscreen>
+  </iframe>
+  <br>
+  <button class="spotify-btn" onclick="showSection('home')">機能選択に戻る</button>
+</section>
+
+  <script>
+    // === 共通セクション切替 ===
+    function showSection(id) {
+      document.querySelectorAll("section").forEach(sec => sec.classList.remove("active"));
+      if (id === "home") {
+        document.querySelector("header").style.display = "block";
+      } else {
+        document.querySelector("header").style.display = "none";
+        document.getElementById(id).classList.add("active");
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    }
+
+    // === 画像生成 ===
+    async function generateImage() {
+      const category = document.getElementById("category").value;
+      const img = document.getElementById("generated-img");
+      const frame = document.getElementById("image-frame");
+      const loading = document.getElementById("loading-text");
+
+      frame.style.display = "flex";
+      img.style.display = "none";
+      loading.style.display = "block";
+
+      try {
+        const res = await fetch(`https://nekobot.xyz/api/image?type=${category}`);
+        const data = await res.json();
+        if (data && data.message) {
+          img.src = data.message;
+          img.onload = () => {
+            loading.style.display = "none";
+            img.style.display = "block";
+          };
+        } else {
+          loading.textContent = "画像を取得できませんでした。";
+        }
+      } catch (err) {
+        console.error("画像取得エラー:", err);
+        loading.textContent = "エラーが発生しました。";
+      }
+    }
+
+    // === 電卓 ===
+    function insert(val) {
+      const display = document.getElementById("calc-display");
+      if (display.innerText === "0") display.innerText = "";
+      if (val.includes("()")) {
+        display.innerText += val;
+        const range = document.createRange();
+        const sel = window.getSelection();
+        range.setStart(display.childNodes[0], display.innerText.length - 1);
+        range.setEnd(display.childNodes[0], display.innerText.length - 1);
+        sel.removeAllRanges();
+        sel.addRange(range);
+      } else {
+        display.innerText += val;
+      }
+    }
+    function clearDisplay() {
+      document.getElementById("calc-display").innerText = "0";
+    }
+    function deleteChar() {
+      const display = document.getElementById("calc-display");
+      display.innerText = display.innerText.slice(0, -1) || "0";
+    }
+    function square() {
+      const display = document.getElementById("calc-display");
+      display.innerText += "**2";
+    }
+    function calculate() {
+      const display = document.getElementById("calc-display");
+      try {
+        let expr = display.innerText
+          .replace(/\^/g, "**")
+          .replace(/sqrt\(/g, "Math.sqrt(")
+          .replace(/sin\(/g, "Math.sin(")
+          .replace(/cos\(/g, "Math.cos(")
+          .replace(/tan\(/g, "Math.tan(")
+          .replace(/log\(/g, "Math.log(");
+        display.innerText = eval(expr);
+      } catch {
+        display.innerText = "エラー";
+      }
+    }
+
+    // === メモ ===
+    let memos = JSON.parse(localStorage.getItem("memos") || "[]");
+    let editIndex = null;
+
+    function saveMemo() {
+      const text = document.getElementById("memo-text").value;
+      const file = document.getElementById("memo-image").files[0];
+      if (!text && !file) return alert("メモ内容が空です");
+
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = () => {
+          if (editIndex !== null) {
+            memos[editIndex] = { text, image: reader.result };
+            editIndex = null;
+          } else {
+            memos.unshift({ text, image: reader.result });
+          }
+          localStorage.setItem("memos", JSON.stringify(memos));
+          renderMemos();
+        };
+        reader.readAsDataURL(file);
+      } else {
+        if (editIndex !== null) {
+          memos[editIndex] = { text, image: memos[editIndex].image };
+          editIndex = null;
+        } else {
+          memos.unshift({ text, image: null });
+        }
+        localStorage.setItem("memos", JSON.stringify(memos));
+        renderMemos();
+      }
+     
+      document.getElementById("memo-text").value = "";
+      document.getElementById("memo-image").value = "";
+    }
+
+    // 🔍 検索付き renderMemos
+    function renderMemos(filter = "") {
+      const list = document.getElementById("memo-list");
+      list.innerHTML = "";
+
+      memos
+        .filter(memo => {
+          if (!filter) return true;
+          const textMatch = memo.text && memo.text.toLowerCase().includes(filter.toLowerCase());
+          return textMatch; // テキストのみ対象（画像検索は除外）
+        })
+        .forEach((memo, i) => {
+          const div = document.createElement("div");
+          div.innerHTML = `
+            <p>${memo.text || ""}</p>
+            ${memo.image ? `<img src="${memo.image}">` : ""}
+            <div style="margin-top:8px;">
+              <button class="spotify-btn" style="padding:0.3rem 1rem; font-size:0.9rem;" onclick="editMemo(${i})">✏️ 編集</button>
+              <button class="spotify-btn" style="padding:0.3rem 1rem; font-size:0.9rem; background:#b91d1d;" onclick="deleteMemo(${i})">🗑️ 削除</button>
+            </div>
+          `;
+          list.appendChild(div);
+        });
+    }
+
+    function editMemo(index) {
+      document.getElementById("memo-text").value = memos[index].text || "";
+      editIndex = index;
+      alert("編集モードになりました。修正後に保存を押してください。");
+    }
+
+    function deleteMemo(index) {
+      if (!confirm("このメモを削除しますか？")) return;
+      memos.splice(index, 1);
+      localStorage.setItem("memos", JSON.stringify(memos));
+      renderMemos();
+    }
+
+    // 🔍 検索ボックスイベント
+    document.getElementById("search-box").addEventListener("input", (e) => {
+      renderMemos(e.target.value);
+    });
+
+    window.addEventListener("DOMContentLoaded", () => {
+      renderMemos();
+    });
+
+  // === 音楽プレイヤー ===
+  let tracks = [];
+  let currentIndex = -1;
+  let isPlaying = false;
+  let isShuffle = false;   // 順次 ↔ ランダム
+  let isRepeat = false;    // 🔁
+  let favorites = new Set(JSON.parse(localStorage.getItem("favorites") || "[]"));
+  let isFavMode = false;   // ⭐お気に入りモード
+
+  const audio = document.getElementById("audio");
+  const miniTitle = document.getElementById("mini-title");
+  const trackList = document.getElementById("track-list");
+  const searchBox = document.getElementById("track-search");
+  const playBtn = document.getElementById("play-btn");
+
+  // tracks.json を読み込む
+async function loadTracks() {
+  try {
+    const res = await fetch("tracks.json");
+    console.log("HTTPステータス:", res.status);
+    if (!res.ok) throw new Error("HTTPエラー " + res.status);
+    tracks = await res.json();
+    console.log("✅ 読み込んだ曲数:", tracks.length);
+    renderTrackList();
+  } catch (e) {
+    console.error("曲リスト読み込みエラー", e);
+  }
+}
+
+
+  // 曲一覧を表示
+function renderTrackList(filter = "") {
+  trackList.innerHTML = "";
+
+  const filtered = tracks
+    .map((t, i) => ({ ...t, index: i }))
+    .filter(t => {
+      if (isFavMode && !favorites.has(t.index)) return false;
+      return (
+        t.title.toLowerCase().includes(filter.toLowerCase()) ||
+        t.artist.toLowerCase().includes(filter.toLowerCase())
+      );
+    });
+
+  if (filtered.length === 0) {
+    const li = document.createElement("li");
+    li.textContent = isFavMode ? "⭐ お気に入りがありません" : "曲が見つかりません";
+    li.style.textAlign = "center";
+    li.style.color = "#aaa";
+    trackList.appendChild(li);
+    return;
+  }
+
+  filtered.forEach(track => {
+    const li = document.createElement("li");
+    li.innerHTML = `
+      <span>${track.title} - ${track.artist}</span>
+      <span>
+        <button onclick="toggleFavorite(${track.index});event.stopPropagation();">
+          ${favorites.has(track.index) ? "⭐" : "☆"}
+        </button>
+      </span>
+    `;
+    li.onclick = () => playTrack(track.index);
+    trackList.appendChild(li);
+  });
+}
+
+
+  // 共通の loadeddata ハンドラ
+  function handleLoaded() {
+    audio.play().then(() => {
+      isPlaying = true;
+      updateMiniTitle(tracks[currentIndex].title, tracks[currentIndex].artist);
+      playBtn.textContent = "⏸";
+    }).catch(err => {
+      console.error("再生エラー:", err);
+    });
+    audio.removeEventListener("loadeddata", handleLoaded);
+  }
+
+// 曲を再生
+function playTrack(index) {
+  currentIndex = index;
+
+  audio.pause();
+  audio.currentTime = 0;
+  audio.src = tracks[index].url;
+
+  // 念のため古いリスナー削除 → 新しく登録
+  audio.removeEventListener("loadeddata", handleLoaded);
+  audio.addEventListener("loadeddata", handleLoaded);
+
+  audio.load();
+
+  // 🎵 ミニプレイヤーに曲名・アーティストを表示
+  updateMiniTitle(tracks[index].title, tracks[index].artist);
+
+  // 📱 iOS Safari / Android のバックグラウンド再生に対応
+  updateMediaSession(tracks[index]);
+}
+
+
+  function togglePlay() {
+    if (isPlaying) {
+      audio.pause();
+      isPlaying = false;
+      playBtn.textContent = "▶️";
+    } else {
+      if (currentIndex === -1 && tracks.length > 0) {
+        playTrack(0);
+      } else {
+        audio.play();
+      }
+      isPlaying = true;
+      playBtn.textContent = "⏸";
+    }
+  }
+
+  // ⏮
+  function prevTrack() {
+    if (tracks.length === 0) return;
+    if (isRepeat) {
+      playTrack(currentIndex);
+      return;
+    }
+    let list = getCurrentTrackList();
+    if (isShuffle) {
+      playTrack(list[Math.floor(Math.random() * list.length)]);
+    } else {
+      let idx = list.indexOf(currentIndex);
+      idx = (idx - 1 + list.length) % list.length;
+      playTrack(list[idx]);
+    }
+  }
+
+  // ⏭
+  function nextTrack() {
+    if (tracks.length === 0) return;
+    if (isRepeat) {
+      playTrack(currentIndex);
+      return;
+    }
+    let list = getCurrentTrackList();
+    if (isShuffle) {
+      playTrack(list[Math.floor(Math.random() * list.length)]);
+    } else {
+      let idx = list.indexOf(currentIndex);
+      idx = (idx + 1) % list.length;
+      playTrack(list[idx]);
+    }
+  }
+
+  function toggleMode() {
+    isShuffle = !isShuffle;
+    const btn = document.getElementById("shuffle-btn");
+    if (isShuffle) {
+      btn.textContent = "🔀";
+      btn.classList.add("active-btn");
+      btn.classList.remove("inactive-btn");
+    } else {
+      btn.textContent = "➡️";
+      btn.classList.add("inactive-btn");
+      btn.classList.remove("active-btn");
+    }
+  }
+
+  function toggleRepeat() {
+    isRepeat = !isRepeat;
+    const btn = document.getElementById("repeat-btn");
+    if (isRepeat) {
+      btn.textContent = "🔁1";
+      btn.classList.add("active-btn");
+      btn.classList.remove("inactive-btn");
+    } else {
+      btn.textContent = "🔁";
+      btn.classList.add("inactive-btn");
+      btn.classList.remove("active-btn");
+    }
+  }
+
+ function toggleFavorite(index) {
+  if (favorites.has(index)) {
+    favorites.delete(index);
+  } else {
+    favorites.add(index);
+  }
+  localStorage.setItem("favorites", JSON.stringify([...favorites]));
+  renderTrackList(searchBox.value);
+}
+
+
+function toggleFavMode() {
+  isFavMode = !isFavMode;
+  const btn = document.getElementById("favmode-btn");
+
+  if (isFavMode) {
+    btn.textContent = "⭐"; // お気に入りモードON
+    btn.classList.add("active-btn");
+    btn.classList.remove("inactive-btn");
+  } else {
+    btn.textContent = "☆"; // 通常モード
+    btn.classList.add("inactive-btn");
+    btn.classList.remove("active-btn");
+  }
+
+  renderTrackList(searchBox.value);
+}
+
+  // 現在のプレイリスト
+  function getCurrentTrackList() {
+    let list = [];
+    tracks.forEach((_, i) => {
+      if (!isFavMode || favorites.has(i)) list.push(i);
+    });
+    return list;
+  }
+
+  // 曲終了時の処理
+  audio.addEventListener("ended", () => {
+    if (isRepeat) {
+      playTrack(currentIndex);
+    } else {
+      nextTrack();
+    }
+  });
+
+  // 検索イベント
+  searchBox.addEventListener("input", (e) => {
+    renderTrackList(e.target.value);
+  });
+
+  window.addEventListener("DOMContentLoaded", loadTracks);
+
+  // === 🎵 曲名スクロール関数 ===
+  function updateMiniTitle(title, artist) {
+    const miniTitle = document.getElementById("mini-title");
+    const text = `${title} - ${artist}`;
+
+    if (text.length > 7) {
+      miniTitle.innerHTML = `<span>${text}</span>`;
+      const span = miniTitle.querySelector("span");
+      const duration = Math.max(8, text.length / 1.5);
+      span.style.animationDuration = `${duration}s`;
+    } else {
+      miniTitle.textContent = text;
+    }
+  }
+   function updateMediaSession(track) {
+  if ("mediaSession" in navigator) {
+    navigator.mediaSession.metadata = new MediaMetadata({
+      title: track.title,
+      artist: track.artist,
+      album: "Multi Tool",
+      artwork: [
+        {
+          src: "https://raw.githubusercontent.com/j20252097/h/refs/heads/main/1718374862947-Di6UorBBZD.webp",
+          sizes: "512x512",
+          type: "image/png"
+        }
+      ]
+    });
+    navigator.mediaSession.setActionHandler("play", () => {
+      audio.play();
+      isPlaying = true;
+      playBtn.textContent = "⏸";
+    });
+    navigator.mediaSession.setActionHandler("pause", () => {
+      audio.pause();
+      isPlaying = false;
+      playBtn.textContent = "▶️";
+    });
+    navigator.mediaSession.setActionHandler("previoustrack", prevTrack);
+    navigator.mediaSession.setActionHandler("nexttrack", nextTrack);
+  }
+}
+// === 天気取得 ===
+async function getWeather() {
+  const pref = document.getElementById("pref-select").value;
+  if (!pref) return alert("都道府県を選んでください");
+
+  const apiKey = "2850624f4f6039f3c0271e0fd2e02d0c";
+  const url = `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(pref)}&appid=${apiKey}&units=metric&lang=ja`;
+
+  const resultDiv = document.getElementById("weather-result");
+  resultDiv.innerHTML = "読み込み中...";
+
+  try {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error("取得失敗");
+    const data = await res.json();
+    resultDiv.innerHTML = `
+      <p><b>${data.name}</b> の天気</p>
+      <p>🌡 気温: ${data.main.temp}°C</p>
+      <p>☁️ 天気: ${data.weather[0].description}</p>
+      <p>💧 湿度: ${data.main.humidity}%</p>
+      <p>🍃 風速: ${data.wind.speed} m/s</p>
+    `;
+  } catch (err) {
+    resultDiv.innerHTML = "天気情報を取得できませんでした";
+    console.error(err);
+  }
+}
+
+// === 現在時刻（UTC+9固定） ===
+function updateClock() {
+  const now = new Date();
+
+  // JST (アジア/東京)
+  const formatter = new Intl.DateTimeFormat("ja-JP", {
+    timeZone: "Asia/Tokyo",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+    weekday: "short"
+  });
+
+  const parts = formatter.formatToParts(now);
+  const get = (type) => parts.find(p => p.type === type)?.value;
+
+  const year   = get("year");
+  const month  = get("month");
+  const day    = get("day");
+  const hour   = get("hour");
+  const minute = get("minute");
+  const second = get("second");
+  const week   = get("weekday"); // ← これで「月」などが取れる
+
+  document.getElementById("current-time").textContent =
+    `${year}/${month}/${day} ${hour}:${minute}:${second}(${week})`;
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+
+
+// === 切り替え ===
+function switchMode(mode) {
+  document.getElementById("stopwatch-mode").style.display = mode === "stopwatch" ? "block" : "none";
+  document.getElementById("timer-mode").style.display = mode === "timer" ? "block" : "none";
+}
+
+// === ストップウォッチ ===
+let swInterval, swStart, swElapsed = 0;
+function startStopwatch() {
+  if (swInterval) return;
+  swStart = Date.now() - swElapsed;
+  swInterval = setInterval(() => {
+    swElapsed = Date.now() - swStart;
+    const hours = String(Math.floor(swElapsed / 3600000)).padStart(2, "0");
+    const minutes = String(Math.floor((swElapsed % 3600000) / 60000)).padStart(2, "0");
+    const seconds = String(Math.floor((swElapsed % 60000) / 1000)).padStart(2, "0");
+    const ms = String(Math.floor((swElapsed % 1000) / 10)).padStart(2, "0");
+    document.getElementById("stopwatch-display").textContent = `${hours}:${minutes}:${seconds}.${ms}`;
+  }, 10);
+}
+function stopStopwatch() {
+  clearInterval(swInterval);
+  swInterval = null;
+}
+function resetStopwatch() {
+  stopStopwatch();
+  swElapsed = 0;
+  document.getElementById("stopwatch-display").textContent = "00:00:00.00";
+}
+
+// === タイマー ===
+let timerInterval, timerRemaining = 0;
+function startTimer() {
+  if (timerInterval) return;
+  const h = parseInt(document.getElementById("t-hours").value) || 0;
+  const m = parseInt(document.getElementById("t-minutes").value) || 0;
+  const s = parseInt(document.getElementById("t-seconds").value) || 0;
+  if (h + m + s === 0 && timerRemaining === 0) return alert("時間を入力してください");
+  if (timerRemaining === 0) timerRemaining = h * 3600 + m * 60 + s;
+
+  const display = document.getElementById("timer-display");
+  const alarm = document.getElementById("alarm-sound");
+
+  timerInterval = setInterval(() => {
+    if (timerRemaining <= 0) {
+      clearInterval(timerInterval);
+      timerInterval = null;
+      alarm.play();
+      alert("タイマー終了！");
+      return;
+    }
+    timerRemaining--;
+    const hh = String(Math.floor(timerRemaining / 3600)).padStart(2, "0");
+    const mm = String(Math.floor((timerRemaining % 3600) / 60)).padStart(2, "0");
+    const ss = String(timerRemaining % 60).padStart(2, "0");
+    display.textContent = `${hh}:${mm}:${ss}`;
+  }, 1000);
+}
+function stopTimer() {
+  clearInterval(timerInterval);
+  timerInterval = null;
+}
+function resetTimer() {
+  stopTimer();
+  timerRemaining = 0;
+  document.getElementById("timer-display").textContent = "00:00:00";
+}
+
+</script>
+</body>
+</html>
