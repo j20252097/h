@@ -277,6 +277,24 @@
 .inactive-btn {
   color: #777 !important;   /* 灰色 */
 }
+
+    /* MangaRaw iframeの広告っぽい領域を上から覆い隠す */
+#mangaraw {
+  position: relative;
+}
+
+#mangaraw::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 320px; /* スライド広告の高さに合わせる */
+  background: #fff; /* MangaRawの背景色に合わせる */
+  z-index: 9999;
+  pointer-events: none; /* 下のiframeを操作可能にする */
+}
+
   </style>
 </head>
 <body>
