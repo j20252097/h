@@ -288,7 +288,8 @@
     <button class="spotify-btn" onclick="showSection('player')">音楽プレイヤー</button>
   <button class="spotify-btn" onclick="showSection('weather')">天気</button>
   <button class="spotify-btn" onclick="showSection('clock')">時計</button>
-    <button class="spotify-btn" onclick="showSection('blockblast')">ミニゲーム</button>
+    <button class="spotify-btn" onclick="showSection('blockblast')">blockblast</button>
+    <button class="spotify-btn" onclick="showSection('2048')">2048</button>
   </header>
 
   <!-- === 画像生成 === -->
@@ -483,6 +484,18 @@
 <section id="blockblast" class="container">
   <h2>🎮 Block Blast!</h2>
   <iframe src="blockblast/index.html"
+          width="420"
+          height="600"
+          style="border:2px solid #1db954; border-radius:10px; background:#000;"
+          allowfullscreen>
+  </iframe>
+  <br>
+  <button class="spotify-btn" onclick="showSection('home')">機能選択に戻る</button>
+</section>
+  <!-- === ミニゲーム 2048 === -->
+<section id="2048" class="container">
+  <h2>🎮 2048</h2>
+  <iframe src="2048/index.html"
           width="420"
           height="600"
           style="border:2px solid #1db954; border-radius:10px; background:#000;"
