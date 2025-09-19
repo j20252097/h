@@ -288,6 +288,7 @@
     <button class="spotify-btn" onclick="showSection('player')">音楽プレイヤー</button>
   <button class="spotify-btn" onclick="showSection('weather')">天気</button>
   <button class="spotify-btn" onclick="showSection('clock')">時計</button>
+    <button class="spotify-btn" onclick="showSection('wifi')">WiFi強度チェック</button>
   </header>
 
   <!-- === 画像生成 === -->
@@ -476,6 +477,15 @@
    <audio id="alarm-sound" src="https://actions.google.com/sounds/v1/alarms/digital_watch_alarm_long.ogg"></audio>
 </div>
 
+  <button class="spotify-btn" onclick="showSection('home')">機能選択に戻る</button>
+</section>
+<!-- === WiFi強度チェック === -->
+<section id="wifi">
+  <h2>WiFi強度チェック</h2>
+  <div id="wifi-info" style="margin:1rem 0; font-size:1.1rem; color:#1db954;">
+    ここに回線情報が表示されます
+  </div>
+  <button class="spotify-btn" onclick="checkWifi()">再チェック</button>
   <button class="spotify-btn" onclick="showSection('home')">機能選択に戻る</button>
 </section>
 
@@ -1055,6 +1065,27 @@ function resetTimer() {
   timerRemaining = 0;
   document.getElementById("timer-display").textContent = "00:00:00";
 }
+
+
+    // === WiFi強度チェック ===
+function checkWifi() {
+  const infoDiv = document.getElementById("wifi-info");
+  if (navigator.connection) {
+    const c = navigator.connection;
+    infoDiv.innerHTML = `
+      <p>📡 接続タイプ: <b>${c.effectiveType}</b></p>
+      <p>⬇️ 推定下り速度: <b>${c.downlink} Mbps</b></p>
+      <p>⏱ レイテンシ(RTT): <b>${c.rtt} ms</b></p>
+      <p>⚡ データセーブ: <b>${c.saveData ? "ON" : "OFF"}</b></p>
+    `;
+  } else {
+    infoDiv.innerHTML = "このブラウザはWiFi強度チェックをサポートしていません。";
+  }
+}
+
+// 初期ロード時に1回実行
+window.addEventListener("DOMContentLoaded", checkWifi);
+
 </script>
 </body>
 </html>
