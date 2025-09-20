@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>タイピングゲーム</title>
+  <style>
+    body {
+      font-family: "メイリオ", sans-serif;
+      text-align: center;
+      padding: 20px;
+      background: #f9f9f9;
+    }
+    #controls { margin-bottom: 20px; }
+    #Input { font-size: 1.5rem; margin-top: 10px; min-height: 2rem; }
+    .Sample { font-size: 1.5rem; margin: 5px 0; }
+    #status { margin-top: 20px; font-size: 1.2rem; }
+    button { padding: 6px 12px; margin: 5px; }
+  </style>
+</head>
+<body>
+  <h1>タイピングゲーム</h1>
+
+  <div id="controls">
+    <label>問題数:
+      <select id="questionCount">
+        <option value="5">5問</option>
+        <option value="10">10問</option>
+        <option value="50">50問</option>
+        <option value="100">100問</option>
+      </select>
+    </label>
+    <button id="startBtn">スタート</button>
+    <button id="restartBtn" style="display:none;">リスタート</button>
+  </div>
+
+  <div>
+    <p class="Sample"></p>  <!-- 漢字問題 -->
+    <p class="Sample"></p>  <!-- ひらがな -->
+    <p class="Sample"></p>  <!-- ローマ字 -->
+    <p id="Input"></p>      <!-- 入力中の文字 -->
+  </div>
+
+  <div id="status">
+    <p>経過時間: <span id="time">0.00</span> 秒</p>
+    <p>ミスタイプ数: <span id="miss">0</span></p>
+  </div>
+
+  <script>
+    const $Sample = document.getElementsByClassName("Sample");
+    const $Input = document.getElementById("Input");
+
+    // ひらがな → ローマ字辞書（完全版）
+    const dictionary = {
+      あ:["a"],い:["i"],う:["u"],え:["e"],お:["o"],
+      か:["ka"],き:["ki"],く:["ku"],け:["ke"],こ:["ko"],
+      さ:["sa"],し:["si","shi","ci"],す:["su"],せ:["se"],そ:["so"],
+      た:["ta"],ち:["ti","chi"],つ:["tu","tsu"],て:["te"],と:["to"],
+      な:["na"],に:["ni"],ぬ:["nu"],ね:["ne"],の:["no"],
+      は:["ha"],ひ:["hi"],ふ:["hu"],へ:["he"],ほ:["ho"],
+      ま:["ma"],み:["mi"],む:["mu"],め:["me"],も:["mo"],
+      や:["ya"],ゆ:["yu"],よ:["yo"],
+      ら:["ra"],り:["ri"],る:["ru"],れ:["re"],ろ:["ro"],
+      わ:["wa"],を:["wo"],ん:["n","xn","nn"],
+      が:["ga"],ぎ:["gi"],ぐ:["gu"],げ:["ge"],ご:["go"],
+      ざ:["za"],じ:["zi","ji"],ず:["zu"],ぜ:["ze"],ぞ:["zo"],
+      だ:["da"],ぢ:["di"],づ:["du"],で:["de"],ど:["do"],
+      ば:["ba"],び:["bi"],ぶ:["bu"],べ:["be"],ぼ:["bo"],
+      ぱ:["pa"],ぴ:["pi"],ぷ:["pu"],ぺ:["pe"],ぽ:["po"],
+      っ:["ltu"],
+      ゃ:["lya","xya"],ゅ:["lyu","xyu"],ょ:["lyo","xyo"],
+      きゃ:["kya"],きゅ:["kyu"],きょ:["kyo"],
+      しゃ:["sya","sha"],しゅ:["syu","shu"],しょ:["syo","sho"],
+      ちゃ:["tya","cha"],ちゅ:["tyu","chu"],ちょ:["tyo","cho"],
+      にゃ:["nya"],にゅ:["nyu"],にょ:["nyo"],
+      ひゃ:["hya"],ひゅ:["hyu"],ひょ:["hyo"],
+      みゃ:["mya"],みゅ:["myu"],みょ:["myo"],
+      りゃ:["rya"],りゅ:["ryu"],りょ:["ryo"],
+      ぎゃ:["gya"],ぎゅ:["gyu"],ぎょ:["gyo"],
+      じゃ:["ja","zya","jya"],じゅ:["ju","zyu","jyu"],じょ:["jo","zyo","jyo"],
+      ぢゃ:["dya"],ぢゅ:["dyu"],ぢょ:["dyo"],
+      びゃ:["bya"],びゅ:["byu"],びょ:["byo"],
+      ぴゃ:["pya"],ぴゅ:["pyu"],ぴょ:["pyo"],
+      ー:["-"],"・":["/"],
+      ぁ:["la"],ぃ:["li"],ぅ:["lu"],ぇ:["le"],ぉ:["lo"],
+      "。":["."],"、":[","]
+    };
+
+    // 出題リスト
+    let Q = [
+      { kanji:"コンパスと分度器", hira:"こんぱすとぶんどき" },
+      { kanji:"雑誌・ノンノ", hira:"ざっし・のんの" },
+      { kanji:"河童の川流れ", hira:"かっぱのかわながれ" },
+      { kanji:"通り魔には気を付けて", hira:"とおりまにはきをつけて" },
+      { kanji:"花より団子", hira:"はなよりだんご" },
+      { kanji:"一期一会", hira:"いちごいちえ" },
+      { kanji:"焼肉定食", hira:"やきにくていしょく" },
+      { kanji:"東京特許許可局", hira:"とうきょうとっきょきょかきょく" }
+    ];
+
+    // ========== 出題管理 ==========
+    let quizSet = [];
+    let quizIndex = 0;
+
+    // ========== タイマー ==========
+    let startTime, timerId;
+    function startTimer(){
+      startTime = Date.now();
+      timerId = setInterval(()=>{
+        let t = (Date.now() - startTime) / 1000;
+        document.getElementById("time").textContent = t.toFixed(2);
+      }, 10);
+    }
+    function stopTimer(){ clearInterval(timerId); }
+
+    // ========== 出題処理 ==========
+    function sampleInput(quizIndex){
+      qHira = quizSet[quizIndex]["hira"];
+      $Sample[0].innerHTML = quizSet[quizIndex]["kanji"];
+      $Sample[1].innerHTML = qHira;
+
+      let inputSample = [], romeSample = "";
+
+      for(let i=0;i<qHira.length;i++){
+        if(qHira[i+1]=="ゃ"||qHira[i+1]=="ゅ"||qHira[i+1]=="ょ"){
+          romeSample+=dictionary[qHira[i]+qHira[i+1]][0];
+          inputSample.push(dictionary[qHira[i]+qHira[i+1]]);
+          i++;
+        }else if(
+          (qHira[i]=="ん" && "なにぬねのあいうえおやゆよ".includes(qHira[i+1])) 
+          || (qHira[i]=="ん" && i==qHira.length-1)
+        ){
+          romeSample+=dictionary["ん"][2];
+          inputSample.push([dictionary["ん"][1],dictionary["ん"][2]]);
+        }else if(qHira[i]=="ん"){
+          let nlist=[];
+          for(let a of dictionary["ん"]){
+            for(let b of dictionary[qHira[i+1]]) nlist.push(a+b);
+          }
+          inputSample.push(nlist);
+          romeSample+=nlist[0];
+          i++;
+        }else if(qHira[i]=="っ"){
+          romeSample+=dictionary[qHira[i+1]][0][0];
+          inputSample.push([dictionary[qHira[i+1]][0][0]]);
+        }else{
+          romeSample+=dictionary[qHira[i]][0];
+          inputSample.push(dictionary[qHira[i]]);
+        }
+      }
+
+      $Sample[2].innerHTML = romeSample;
+      return inputSample;
+    }
+
+    // ========== 入力判定 ==========
+    let romeIndex=0,keyInput="",hiraIndex=0,qHira="",inputSample=[];
+    let cList1=[],cList2=[],count=0,missCount=0;
+
+    document.addEventListener("keydown",function(e){
+      if(!quizSet.length) return; // ゲーム開始前は無効
+
+      let key=e.key; count++;
+      let romeIndexFlag=false;
+
+      if(cList1.length==1){
+        if(inputSample[hiraIndex][cList1[0]][romeIndex]==key) romeIndexFlag=true;
+      }else if(cList2.length==1){
+        if(inputSample[hiraIndex][cList2[0]][romeIndex]==key) romeIndexFlag=true;
+      }else{
+        if(romeIndex==0){
+          for(let i=0;i<inputSample[hiraIndex].length;i++){
+            if(inputSample[hiraIndex][i][romeIndex]==key){
+              romeIndexFlag=true; cList1=[i];
+            }
+          }
+        }else if(cList2.length==0 && cList1.length>0){
+          for(let i of cList1){
+            if(inputSample[hiraIndex][i][romeIndex]==key){
+              romeIndexFlag=true; cList2=[i]; cList1=[];
+            }
+          }
+        }else{
+          for(let i of cList2){
+            if(inputSample[hiraIndex][i][romeIndex]==key){
+              romeIndexFlag=true; cList1=[i]; cList2=[];
+            }
+          }
+        }
+      }
+
+      if(romeIndexFlag){
+        romeIndex++; keyInput+=key; $Input.textContent=keyInput;
+        if((cList1.length==1 && romeIndex==inputSample[hiraIndex][cList1[0]].length)
+        || (cList2.length==1 && romeIndex==inputSample[hiraIndex][cList2[0]].length)){
+          romeIndex=0; hiraIndex++; cList1=[]; cList2=[];
+        }
+        if(hiraIndex==inputSample.length){
+          if(quizIndex==quizSet.length-1){
+            stopTimer();
+            for(let i=0;i<$Sample.length;i++) $Sample[i].textContent="終了";
+            $Input.textContent="入力回数:"+count+" ミス:"+missCount;
+            document.getElementById("restartBtn").style.display="inline-block";
+          }else{
+            quizIndex++; inputSample=sampleInput(quizIndex);
+            romeIndex=0; keyInput=""; hiraIndex=0; $Input.textContent="";
+          }
+        }
+      }else{
+        missCount++;
+        document.getElementById("miss").textContent=missCount;
+        $Input.innerHTML=keyInput+'<font color="red">'+key+"</font>";
+      }
+    });
+
+    // ========== ユーティリティ ==========
+    function shuffle(array) {
+      let arr = array.slice();
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
+
+    function generateQuizSet(count) {
+      let shuffled = shuffle(Q);
+      if (count <= Q.length) {
+        return shuffled.slice(0, count);
+      } else {
+        let result = [];
+        while (result.length < count) {
+          result = result.concat(shuffle(Q));
+        }
+        return result.slice(0, count);
+      }
+    }
+
+    // ========== スタート/リスタート ==========
+    document.getElementById("startBtn").addEventListener("click", ()=>{
+      let countSel = parseInt(document.getElementById("questionCount").value,10);
+      quizSet = generateQuizSet(countSel);
+      quizIndex=0; missCount=0; count=0;
+      inputSample=sampleInput(quizIndex);
+      romeIndex=0; keyInput=""; hiraIndex=0; $Input.textContent="";
+      document.getElementById("miss").textContent=0;
+      document.getElementById("time").textContent="0.00";
+      document.getElementById("restartBtn").style.display="none";
+      startTimer();
+    });
+
+    document.getElementById("restartBtn").addEventListener("click", ()=>{
+      let countSel = parseInt(document.getElementById("questionCount").value,10);
+      quizSet = generateQuizSet(countSel);
+      quizIndex=0; missCount=0; count=0;
+      inputSample=sampleInput(quizIndex);
+      romeIndex=0; keyInput=""; hiraIndex=0; $Input.textContent="";
+      document.getElementById("miss").textContent=0;
+      document.getElementById("time").textContent="0.00";
+      document.getElementById("restartBtn").style.display="none";
+      startTimer();
+    });
+  </script>
+</body>
+</html>
