@@ -293,6 +293,7 @@
     <button class="spotify-btn" onclick="showSection('blockblast')">blockblast</button>
     <button class="spotify-btn" onclick="showSection('2048')">2048</button>
     <button class="spotify-btn" onclick="showSection('mangaraw')">MangaRaw</button>
+    <button class="spotify-btn" onclick="showSection('google')">Google</button>
   </header>
 
   <!-- === 画像生成 === -->
@@ -511,6 +512,18 @@
 <section id="mangaraw" class="container">
   <h2>📖 MangaRaw</h2>
   <iframe src="https://mangaraw.ac/"
+          width="100%"
+          height="800"
+          style="border:2px solid #1db954; border-radius:10px; background:#fff;"
+          allowfullscreen>
+  </iframe>
+  <br>
+  <button class="spotify-btn" onclick="showSection('home')">機能選択に戻る</button>
+</section>
+    <!-- === MangaRaw iframe === -->
+<section id="google" class="container">
+  <h2>📖 MangaRaw</h2>
+  <iframe src="https://google.com"
           width="100%"
           height="800"
           style="border:2px solid #1db954; border-radius:10px; background:#fff;"
