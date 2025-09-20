@@ -5,22 +5,77 @@
   <title>タイピングゲーム</title>
   <style>
     body {
-      font-family: "メイリオ", sans-serif;
+      margin: 0;
+      font-family: "Segoe UI", sans-serif;
+      background-color: #121212;
+      color: #fff;
       text-align: center;
       padding: 20px;
-      background: #f9f9f9;
     }
-    #controls { margin-bottom: 20px; }
-    #Input { font-size: 1.5rem; margin-top: 10px; min-height: 2rem; }
-    .Sample { font-size: 1.5rem; margin: 5px 0; }
-    #status { margin-top: 20px; font-size: 1.2rem; }
-    button { padding: 6px 12px; margin: 5px; }
+    h1 {
+      color: #1db954;
+      margin-bottom: 1rem;
+    }
+    /* 共通カード風枠 */
+    .card {
+      background: #181818;
+      border: 2px solid #1db954;
+      border-radius: 12px;
+      box-shadow: 0 0 15px rgba(29,185,84,0.3);
+      padding: 1rem;
+      margin: 1rem auto;
+      max-width: 700px;
+    }
+    #controls select, #controls button {
+      padding: 0.5rem 1rem;
+      margin: 0.5rem;
+      border-radius: 6px;
+      border: none;
+      font-size: 1rem;
+    }
+    #controls select {
+      background: #000;
+      color: #1db954;
+      border: 1px solid #1db954;
+    }
+    #controls button {
+      background: #1db954;
+      color: #fff;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    #controls button:hover {
+      background: #17a74a;
+    }
+    .Sample {
+      font-size: 1.4rem;
+      margin: 0.5rem 0;
+    }
+    #Input {
+      font-size: 1.5rem;
+      margin-top: 10px;
+      min-height: 2rem;
+      padding: 0.5rem;
+      background: #000;
+      border-radius: 8px;
+      border: 1px solid #1db954;
+    }
+    #status p {
+      margin: 0.5rem 0;
+      font-size: 1.1rem;
+    }
+    #score {
+      font-size: 1.3rem;
+      color: gold;
+      font-weight: bold;
+      margin-top: 0.5rem;
+    }
   </style>
 </head>
 <body>
   <h1>タイピングゲーム</h1>
 
-  <div id="controls">
+  <div id="controls" class="card">
     <label>問題数:
       <select id="questionCount">
         <option value="5">5問</option>
@@ -33,23 +88,23 @@
     <button id="restartBtn" style="display:none;">リスタート</button>
   </div>
 
-  <div>
+  <div id="questionBox" class="card">
     <p class="Sample"></p>  <!-- 漢字問題 -->
     <p class="Sample"></p>  <!-- ひらがな -->
     <p class="Sample"></p>  <!-- ローマ字 -->
     <p id="Input"></p>      <!-- 入力中の文字 -->
   </div>
 
-  <div id="status">
+  <div id="status" class="card">
     <p>経過時間: <span id="time">0.00</span> 秒</p>
     <p>ミスタイプ数: <span id="miss">0</span></p>
+    <p id="score">スコア: 0</p>
   </div>
 
   <script>
     const $Sample = document.getElementsByClassName("Sample");
     const $Input = document.getElementById("Input");
 
-    // ひらがな → ローマ字辞書（完全版）
     const dictionary = {
       あ:["a"],い:["i"],う:["u"],え:["e"],お:["o"],
       か:["ka"],き:["ki"],く:["ku"],け:["ke"],こ:["ko"],
@@ -85,7 +140,6 @@
       "。":["."],"、":[","]
     };
 
-    // 出題リスト
     let Q = [
       { kanji:"コンパスと分度器", hira:"こんぱすとぶんどき" },
       { kanji:"雑誌・ノンノ", hira:"ざっし・のんの" },
@@ -97,12 +151,12 @@
       { kanji:"東京特許許可局", hira:"とうきょうとっきょきょかきょく" }
     ];
 
-    // ========== 出題管理 ==========
-    let quizSet = [];
-    let quizIndex = 0;
-
-    // ========== タイマー ==========
+    let quizSet = [], quizIndex = 0;
     let startTime, timerId;
+
+    let romeIndex=0,keyInput="",hiraIndex=0,qHira="",inputSample=[];
+    let cList1=[],cList2=[],count=0,missCount=0,score=0;
+
     function startTimer(){
       startTime = Date.now();
       timerId = setInterval(()=>{
@@ -112,14 +166,12 @@
     }
     function stopTimer(){ clearInterval(timerId); }
 
-    // ========== 出題処理 ==========
     function sampleInput(quizIndex){
       qHira = quizSet[quizIndex]["hira"];
       $Sample[0].innerHTML = quizSet[quizIndex]["kanji"];
       $Sample[1].innerHTML = qHira;
 
       let inputSample = [], romeSample = "";
-
       for(let i=0;i<qHira.length;i++){
         if(qHira[i+1]=="ゃ"||qHira[i+1]=="ゅ"||qHira[i+1]=="ょ"){
           romeSample+=dictionary[qHira[i]+qHira[i+1]][0];
@@ -147,17 +199,12 @@
           inputSample.push(dictionary[qHira[i]]);
         }
       }
-
       $Sample[2].innerHTML = romeSample;
       return inputSample;
     }
 
-    // ========== 入力判定 ==========
-    let romeIndex=0,keyInput="",hiraIndex=0,qHira="",inputSample=[];
-    let cList1=[],cList2=[],count=0,missCount=0;
-
     document.addEventListener("keydown",function(e){
-      if(!quizSet.length) return; // ゲーム開始前は無効
+      if(!quizSet.length) return;
 
       let key=e.key; count++;
       let romeIndexFlag=false;
@@ -195,6 +242,8 @@
           romeIndex=0; hiraIndex++; cList1=[]; cList2=[];
         }
         if(hiraIndex==inputSample.length){
+          score += Math.max(10 - missCount, 1); // ミスが少ないほど高得点
+          document.getElementById("score").textContent="スコア: "+score;
           if(quizIndex==quizSet.length-1){
             stopTimer();
             for(let i=0;i<$Sample.length;i++) $Sample[i].textContent="終了";
@@ -212,7 +261,6 @@
       }
     });
 
-    // ========== ユーティリティ ==========
     function shuffle(array) {
       let arr = array.slice();
       for (let i = arr.length - 1; i > 0; i--) {
@@ -235,15 +283,15 @@
       }
     }
 
-    // ========== スタート/リスタート ==========
     document.getElementById("startBtn").addEventListener("click", ()=>{
       let countSel = parseInt(document.getElementById("questionCount").value,10);
       quizSet = generateQuizSet(countSel);
-      quizIndex=0; missCount=0; count=0;
+      quizIndex=0; missCount=0; count=0; score=0;
       inputSample=sampleInput(quizIndex);
       romeIndex=0; keyInput=""; hiraIndex=0; $Input.textContent="";
       document.getElementById("miss").textContent=0;
       document.getElementById("time").textContent="0.00";
+      document.getElementById("score").textContent="スコア: 0";
       document.getElementById("restartBtn").style.display="none";
       startTimer();
     });
@@ -251,11 +299,12 @@
     document.getElementById("restartBtn").addEventListener("click", ()=>{
       let countSel = parseInt(document.getElementById("questionCount").value,10);
       quizSet = generateQuizSet(countSel);
-      quizIndex=0; missCount=0; count=0;
+      quizIndex=0; missCount=0; count=0; score=0;
       inputSample=sampleInput(quizIndex);
       romeIndex=0; keyInput=""; hiraIndex=0; $Input.textContent="";
       document.getElementById("miss").textContent=0;
       document.getElementById("time").textContent="0.00";
+      document.getElementById("score").textContent="スコア: 0";
       document.getElementById("restartBtn").style.display="none";
       startTimer();
     });
