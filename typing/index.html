@@ -8,17 +8,76 @@
       font-family: "メイリオ", sans-serif;
       text-align: center;
       padding: 20px;
-      background: #f9f9f9;
+      margin: 0;
+      background: #121212; /* Spotify風の黒背景 */
+      color: #fff;
     }
-    #controls { margin-bottom: 20px; }
-    #Input { font-size: 1.5rem; margin-top: 10px; min-height: 2rem; }
-    .Sample { font-size: 1.5rem; margin: 5px 0; }
-    #status { margin-top: 20px; font-size: 1.2rem; }
-    button { padding: 6px 12px; margin: 5px; }
+
+    h1 {
+      color: #1db954; /* Spotifyグリーン */
+      margin-bottom: 20px;
+    }
+
+    #controls {
+      margin-bottom: 20px;
+    }
+
+    #controls select, #controls button {
+      padding: 8px 16px;
+      border-radius: 20px;
+      border: none;
+      font-size: 1rem;
+      margin: 5px;
+    }
+
+    #controls button {
+      background: #1db954;
+      color: #fff;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+
+    #controls button:hover {
+      background: #1ed760; /* hover時少し明るい緑 */
+    }
+
+    .quiz-box {
+      background: #282828;
+      border-radius: 12px;
+      padding: 20px;
+      margin: 20px auto;
+      width: 70%;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+    }
+
+    #Input {
+      font-size: 1.5rem;
+      margin-top: 15px;
+      min-height: 2rem;
+      border-top: 1px solid #444;
+      padding-top: 10px;
+    }
+
+    .Sample {
+      font-size: 1.5rem;
+      margin: 10px 0;
+    }
+
+    #status {
+      margin-top: 20px;
+      font-size: 1.2rem;
+      background: #181818;
+      border-radius: 12px;
+      padding: 15px;
+      width: 50%;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
     #score {
       font-size: 1.4rem;
       font-weight: bold;
-      color: #1a73e8;
+      color: #1db954;
       margin-top: 10px;
     }
   </style>
@@ -39,7 +98,7 @@
     <button id="restartBtn" style="display:none;">リスタート</button>
   </div>
 
-  <div>
+  <div class="quiz-box">
     <p class="Sample"></p>  <!-- 漢字問題 -->
     <p class="Sample"></p>  <!-- ひらがな -->
     <p class="Sample"></p>  <!-- ローマ字 -->
@@ -56,7 +115,7 @@
     const $Sample = document.getElementsByClassName("Sample");
     const $Input = document.getElementById("Input");
 
-    // ひらがな → ローマ字辞書（完全版）
+    // ひらがな → ローマ字辞書
     const dictionary = {
       あ:["a"],い:["i"],う:["u"],え:["e"],お:["o"],
       か:["ka"],き:["ki"],く:["ku"],け:["ke"],こ:["ko"],
@@ -152,8 +211,14 @@
           romeSample+=nlist[0];
           i++;
         }else if(qHira[i]=="っ"){
-          romeSample+=dictionary[qHira[i+1]][0][0];
-          inputSample.push([dictionary[qHira[i+1]][0][0]]);
+          let next = qHira[i+1];
+          let nextList = dictionary[next];
+          let doubledList = [];
+          for(let cand of nextList){
+            doubledList.push(cand[0] + cand);
+          }
+          inputSample.push(doubledList);
+          romeSample += doubledList[0];
         }else{
           romeSample+=dictionary[qHira[i]][0];
           inputSample.push(dictionary[qHira[i]]);
@@ -169,7 +234,7 @@
     let cList1=[],cList2=[],count=0,missCount=0;
 
     document.addEventListener("keydown",function(e){
-      if(!quizSet.length) return; // ゲーム開始前は無効
+      if(!quizSet.length) return;
 
       let key=e.key; count++;
       let romeIndexFlag=false;
@@ -207,7 +272,6 @@
           romeIndex=0; hiraIndex++; cList1=[]; cList2=[];
         }
         if(hiraIndex==inputSample.length){
-          // スコア加算処理
           let base = Math.max(10 - missCount, 1);
           let now = Date.now();
           let elapsed = (now - lastTime) / 1000;
