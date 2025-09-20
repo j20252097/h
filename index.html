@@ -293,8 +293,6 @@
     <button class="spotify-btn" onclick="showSection('blockblast')">blockblast</button>
     <button class="spotify-btn" onclick="showSection('2048')">2048</button>
     <button class="spotify-btn" onclick="showSection('mangaraw')">MangaRaw</button>
-    <button class="spotify-btn" onclick="showSection('insta')">インスタ</button>
-    <button class="spotify-btn" onclick="showSection('X')">X</button>
     </header>
 
   <!-- === 画像生成 === -->
@@ -521,31 +519,7 @@
   <br>
   <button class="spotify-btn" onclick="showSection('home')">機能選択に戻る</button>
 </section>
-   <!-- === insta === -->
-<section id="insta" class="container">
-  <h2>📖 インスタ</h2>
-  <iframe src="https://instagram.com"
-          width="100%"
-          height="800"
-          style="border:2px solid #1db954; border-radius:10px; background:#fff;"
-          allowfullscreen>
-  </iframe>
-  <br>
-  <button class="spotify-btn" onclick="showSection('home')">機能選択に戻る</button>
-</section>
-   <!-- === X === -->
-<section id="X" class="container">
-  <h2>📖 X</h2>
-  <iframe src="https://X.com"
-          width="100%"
-          height="800"
-          style="border:2px solid #1db954; border-radius:10px; background:#fff;"
-          allowfullscreen>
-  </iframe>
-  <br>
-  <button class="spotify-btn" onclick="showSection('home')">機能選択に戻る</button>
-</section>
- <script>
+<script>
     // === 共通セクション切替 ===
     function showSection(id) {
       document.querySelectorAll("section").forEach(sec => sec.classList.remove("active"));
