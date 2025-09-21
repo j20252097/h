@@ -33,14 +33,20 @@
       text-align: left;
     }
     img { border-radius: 6px; }
+    #status {
+      margin-top: 1rem;
+      font-weight: bold;
+      color: #1db954;
+    }
   </style>
 </head>
 <body>
   <h2>Spotify 検索</h2>
   <input type="text" id="query" placeholder="曲名やアーティスト名を入力">
   <button onclick="searchSpotify()">検索</button>
-  <button onclick="loginWithSpotify()">Spotifyログイン</button>
+  <button id="loginBtn" onclick="loginWithSpotify()">Spotifyログイン</button>
 
+  <div id="status"></div>
   <div id="results"></div>
 
   <script>
@@ -103,6 +109,12 @@
       const code = params.get("code");
 
       if (!code) {
+        // すでにログイン済みか確認
+        const token = localStorage.getItem("spotify_token");
+        if (token) {
+          document.getElementById("status").innerText = "✅ ログイン済みです";
+          document.getElementById("loginBtn").style.display = "none";
+        }
         return;
       }
 
@@ -127,7 +139,11 @@
 
       if (data.access_token) {
         localStorage.setItem("spotify_token", data.access_token);
+        document.getElementById("status").innerText = "✅ ログイン完了しました";
+        document.getElementById("loginBtn").style.display = "none";
         window.history.replaceState({}, document.title, REDIRECT_URI); // URLをクリーンに
+      } else {
+        document.getElementById("status").innerText = "❌ ログイン失敗しました";
       }
     }
 
