@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Spotify Search</title>
+  <style>
+    body {
+      font-family: "Segoe UI", sans-serif;
+      background: #121212;
+      color: #fff;
+      text-align: center;
+    }
+    h2 { color: #1db954; }
+    input, button {
+      padding: 0.6rem;
+      border-radius: 6px;
+      border: 1px solid #1db954;
+      margin: 0.3rem;
+    }
+    button {
+      background: #1db954;
+      color: #fff;
+      cursor: pointer;
+    }
+    button:hover { background: #17a74a; }
+    .result {
+      margin: 1rem auto;
+      padding: 1rem;
+      background: #181818;
+      border-radius: 8px;
+      max-width: 600px;
+      text-align: left;
+    }
+    img { border-radius: 6px; }
+  </style>
+</head>
+<body>
+  <h2>Spotify 検索</h2>
+  <input type="text" id="query" placeholder="曲名やアーティスト名を入力">
+  <button onclick="searchSpotify()">検索</button>
+  <button onclick="loginWithSpotify()">Spotifyログイン</button>
+
+  <div id="results"></div>
+
+  <script>
+    const CLIENT_ID = "🔑あなたのSpotifyClientID";
+    const REDIRECT_URI = "https://j20252097.github.io/h/spotify/index.html";
+    const SCOPES = "user-read-private user-read-email";
+
+    // --- アクセストークン取得 ---
+    function getTokenFromUrl() {
+      const hash = window.location.hash.substring(1);
+      const params = new URLSearchParams(hash);
+      return params.get("access_token");
+    }
+
+    function loginWithSpotify() {
+      const authUrl = `https://accounts.spotify.com/authorize?client_id=${CLIENT_ID}&response_type=token&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&scope=${encodeURIComponent(SCOPES)}`;
+      window.location.href = authUrl;
+    }
+
+    // ページ読み込み時にトークンを保存
+    let accessToken = getTokenFromUrl();
+    if (accessToken) {
+      localStorage.setItem("spotify_token", accessToken);
+      window.history.replaceState({}, document.title, window.location.pathname);
+    } else {
+      accessToken = localStorage.getItem("spotify_token");
+    }
+
+    // --- Spotify検索 ---
+    async function searchSpotify() {
+      const query = document.getElementById("query").value;
+      if (!query) return alert("検索ワードを入力してください");
+
+      if (!accessToken) {
+        alert("Spotifyにログインしてください");
+        return;
+      }
+
+      const res = await fetch(`https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=track,artist&limit=5`, {
+        headers: { "Authorization": "Bearer " + accessToken }
+      });
+      const data = await res.json();
+
+      const resultsDiv = document.getElementById("results");
+      resultsDiv.innerHTML = "";
+
+      if ((!data.tracks || data.tracks.items.length === 0) && (!data.artists || data.artists.items.length === 0)) {
+        resultsDiv.innerHTML = "<p>結果が見つかりませんでした</p>";
+        return;
+      }
+
+      // 曲表示
+      if (data.tracks) {
+        data.tracks.items.forEach(track => {
+          const div = document.createElement("div");
+          div.className = "result";
+          div.innerHTML = `
+            <p><b>🎵 ${track.name}</b> - ${track.artists.map(a => a.name).join(", ")}</p>
+            <img src="${track.album.images[0]?.url}" width="200"><br>
+            ${track.preview_url ? `<audio controls src="${track.preview_url}"></audio>` : `<p>プレビューなし</p>`}
+          `;
+          resultsDiv.appendChild(div);
+        });
+      }
+
+      // アーティスト表示
+      if (data.artists) {
+        data.artists.items.forEach(artist => {
+          const div = document.createElement("div");
+          div.className = "result";
+          div.innerHTML = `
+            <p><b>👤 ${artist.name}</b></p>
+            ${artist.images[0] ? `<img src="${artist.images[0].url}" width="200"><br>` : ""}
+            <p>フォロワー: ${artist.followers.total.toLocaleString()}</p>
+            <a href="${artist.external_urls.spotify}" target="_blank">Spotifyで見る</a>
+          `;
+          resultsDiv.appendChild(div);
+        });
+      }
+    }
+  </script>
+</body>
+</html>
