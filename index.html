@@ -523,16 +523,39 @@
 <!-- === Spotify検索 === -->
 <section id="spotify" class="container">
   <h2>🎧 Spotify 検索</h2>
-  <iframe src="spotify/index.html"
-          width="100%"
-          height="600"
-          style="border:2px solid #1db954; border-radius:10px; background:#fff;"
-          allowfullscreen>
-  </iframe>
+  <div id="spotify-container"></div>
   <br>
   <button class="spotify-btn" onclick="showSection('home')">機能選択に戻る</button>
 </section>
 
+<script>
+async function loadSpotify() {
+  try {
+    const res = await fetch("spotify/index.html");
+    const text = await res.text();
+
+    // <body> 内だけ抽出
+    const bodyContent = text.match(/<body[^>]*>([\s\S]*)<\/body>/i)[1];
+
+    // 差し込み
+    document.getElementById("spotify-container").innerHTML = bodyContent;
+
+    // Spotify用JSを読み込む（index.html には <script src="spotify.js"> を書かない）
+    const script = document.createElement("script");
+    script.src = "spotify/spotify.js";
+    document.body.appendChild(script);
+
+  } catch (e) {
+    console.error("Spotifyページの読み込みに失敗しました", e);
+  }
+}
+
+// Spotifyセクションを開いた時だけ読み込む
+function showSpotify() {
+  loadSpotify();
+  showSection('spotify');
+}
+</script>
 <script>
     // === 共通セクション切替 ===
     function showSection(id) {
