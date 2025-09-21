@@ -1,5 +1,14 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Spotify Search (PKCE)</title>
+  <link rel="stylesheet" href="spotify.css">
+</head>
 <body>
   <div class="spotify-app">
+    <h2>Spotify 検索</h2>
     <input type="text" id="query" placeholder="曲名やアーティスト名を入力">
     <button onclick="searchSpotify()">検索</button>
     <button id="loginBtn" onclick="loginWithSpotify()">Spotifyログイン</button>
@@ -8,4 +17,7 @@
     <div id="status"></div>
     <div id="results"></div>
   </div>
+
+  <script src="spotify.js"></script>
 </body>
+</html>
