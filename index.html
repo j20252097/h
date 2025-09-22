@@ -1124,11 +1124,12 @@ function resetTimer() {
   timerRemaining = 0;
   document.getElementById("timer-display").textContent = "00:00:00";
 }
-// ================= Spotify PKCE 認証 & 検索 ==================
-const CLIENT_ID = "e7189e285dae4cf78008255f90cc113d";
-const REDIRECT_URI = "https://j20252097.github.io/h/";
+// === spotify ===
+const CLIENT_ID = "e7189e285dae4cf78008255f90cc113d"; // あなたの Spotify Client ID
+const REDIRECT_URI = "https://j20252097.github.io/h/index.html"; // 完全一致するURL
 const SCOPES = "user-read-private user-read-email";
 
+// ランダム文字列生成
 function generateRandomString(length) {
   const possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
   let text = "";
@@ -1138,12 +1139,12 @@ function generateRandomString(length) {
   return text;
 }
 
+// SHA256 & Base64URL
 async function sha256(plain) {
   const encoder = new TextEncoder();
   const data = encoder.encode(plain);
   return window.crypto.subtle.digest("SHA-256", data);
 }
-
 function base64urlencode(a) {
   let str = "";
   const bytes = new Uint8Array(a);
@@ -1153,7 +1154,6 @@ function base64urlencode(a) {
   }
   return btoa(str).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 }
-
 async function generateCodeChallenge(codeVerifier) {
   const digest = await sha256(codeVerifier);
   return base64urlencode(digest);
@@ -1179,6 +1179,59 @@ function logoutFromSpotify() {
   document.getElementById("logoutBtn").style.display = "none";
   document.getElementById("results").innerHTML = "";
 }
+
+// --- 認証後の処理 (code → access_token) ---
+async function handleRedirectCallback() {
+  const params = new URLSearchParams(window.location.search);
+  const code = params.get("code");
+
+  if (!code) {
+    // すでにトークンがある場合 → 自動的にログイン済みにする
+    const token = localStorage.getItem("spotify_token");
+    if (token) {
+      document.getElementById("status").innerText = "✅ Spotifyにログイン中";
+      document.getElementById("loginBtn").style.display = "none";
+      document.getElementById("logoutBtn").style.display = "inline-block";
+    }
+    return;
+  }
+
+  const codeVerifier = localStorage.getItem("spotify_code_verifier");
+
+  const body = new URLSearchParams({
+    client_id: CLIENT_ID,
+    grant_type: "authorization_code",
+    code: code,
+    redirect_uri: REDIRECT_URI,
+    code_verifier: codeVerifier
+  });
+
+  try {
+    const res = await fetch("https://accounts.spotify.com/api/token", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body
+    });
+    const data = await res.json();
+
+    if (data.access_token) {
+      localStorage.setItem("spotify_token", data.access_token);
+      document.getElementById("status").innerText = "✅ Spotifyにログインしました";
+      document.getElementById("loginBtn").style.display = "none";
+      document.getElementById("logoutBtn").style.display = "inline-block";
+
+      // URLから ?code=xxx を消す
+      window.history.replaceState({}, document.title, REDIRECT_URI);
+    } else {
+      document.getElementById("status").innerText = "❌ トークン取得失敗";
+      console.error(data);
+    }
+  } catch (err) {
+    console.error("トークン交換エラー:", err);
+    document.getElementById("status").innerText = "❌ エラー発生";
+  }
+}
+window.addEventListener("DOMContentLoaded", handleRedirectCallback);
 
 // --- Spotify 検索 ---
 async function searchSpotify() {
@@ -1225,7 +1278,6 @@ async function searchSpotify() {
 
   document.getElementById("results").innerHTML = html || "検索結果なし";
 }
-
 </script>
 </body>
 </html>
