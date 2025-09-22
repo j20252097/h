@@ -1124,8 +1124,9 @@ function resetTimer() {
   timerRemaining = 0;
   document.getElementById("timer-display").textContent = "00:00:00";
 }
-// --- ログインは spotify/index.html に飛ばすだけ ---
+// --- ログインボタンを押したら毎回 spotify/index.html に飛ばす ---
 function loginWithSpotify() {
+  // ログイン状態は無視して必ずリダイレクト
   window.location.href = "spotify/index.html"; 
 }
 
@@ -1145,6 +1146,8 @@ function checkSpotifyLogin() {
     document.getElementById("status").innerText = "✅ Spotifyにログイン中";
     document.getElementById("loginBtn").style.display = "none";
     document.getElementById("logoutBtn").style.display = "inline-block";
+  } else {
+    document.getElementById("status").innerText = "❌ 未ログイン";
   }
 }
 window.addEventListener("DOMContentLoaded", checkSpotifyLogin);
@@ -1153,7 +1156,8 @@ window.addEventListener("DOMContentLoaded", checkSpotifyLogin);
 async function searchSpotify() {
   const token = localStorage.getItem("spotify_token");
   if (!token) {
-    alert("先に Spotify にログインしてください");
+    alert("Spotifyログインが必要です。ログインページに移動します。");
+    window.location.href = "spotify/index.html"; // 未ログインなら強制移動
     return;
   }
 
@@ -1162,36 +1166,43 @@ async function searchSpotify() {
 
   let searchTypes = (type === "all") ? "track,artist" : type;
 
-  const res = await fetch(`https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=${searchTypes}`, {
-    headers: { Authorization: `Bearer ${token}` }
-  });
-  const data = await res.json();
+  try {
+    const res = await fetch(
+      `https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=${searchTypes}`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    const data = await res.json();
 
-  let html = "";
-  if (data.tracks?.items) {
-    data.tracks.items.forEach(track => {
-      html += `
-        <div class="result">
-          <img src="${track.album.images[0]?.url || ''}" alt="">
-          <p><b>${track.name}</b> - ${track.artists.map(a => a.name).join(", ")}</p>
-          ${track.preview_url ? `<audio controls src="${track.preview_url}"></audio>` : ""}
-        </div>
-      `;
-    });
-  }
-  if (data.artists?.items) {
-    data.artists.items.forEach(artist => {
-      html += `
-        <div class="result">
-          <img src="${artist.images[0]?.url || ''}" alt="">
-          <p><b>${artist.name}</b></p>
-        </div>
-      `;
-    });
-  }
+    let html = "";
+    if (data.tracks?.items) {
+      data.tracks.items.forEach(track => {
+        html += `
+          <div class="result">
+            <img src="${track.album.images[0]?.url || ''}" alt="">
+            <p><b>${track.name}</b> - ${track.artists.map(a => a.name).join(", ")}</p>
+            ${track.preview_url ? `<audio controls src="${track.preview_url}"></audio>` : ""}
+          </div>
+        `;
+      });
+    }
+    if (data.artists?.items) {
+      data.artists.items.forEach(artist => {
+        html += `
+          <div class="result">
+            <img src="${artist.images[0]?.url || ''}" alt="">
+            <p><b>${artist.name}</b></p>
+          </div>
+        `;
+      });
+    }
 
-  document.getElementById("results").innerHTML = html || "検索結果なし";
+    document.getElementById("results").innerHTML = html || "検索結果なし";
+  } catch (err) {
+    console.error("Spotify検索エラー:", err);
+    document.getElementById("results").innerText = "エラーが発生しました";
+  }
 }
+
 
 </script>
 </body>
