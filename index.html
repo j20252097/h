@@ -1124,14 +1124,9 @@ function resetTimer() {
   timerRemaining = 0;
   document.getElementById("timer-display").textContent = "00:00:00";
 }
-const CLIENT_ID = "e7189e285dae4cf78008255f90cc113d"; // あなたの Spotify Client ID
-const REDIRECT_URI = "https://j20252097.github.io/h/"; // 完全一致させる
-const SCOPES = "user-read-private user-read-email";
-
-// --- ログイン ---
+// --- ログインは spotify/index.html に飛ばすだけ ---
 function loginWithSpotify() {
-  const authUrl = `https://accounts.spotify.com/authorize?response_type=token&client_id=${CLIENT_ID}&scope=${encodeURIComponent(SCOPES)}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}`;
-  window.location = authUrl;
+  window.location.href = "spotify/index.html"; 
 }
 
 // --- ログアウト ---
@@ -1143,35 +1138,18 @@ function logoutFromSpotify() {
   document.getElementById("results").innerHTML = "";
 }
 
-// --- リダイレクト後の処理 (access_token を取得) ---
-function handleRedirectImplicit() {
-  const hash = window.location.hash;
-  if (hash && hash.includes("access_token")) {
-    const params = new URLSearchParams(hash.substring(1));
-    const token = params.get("access_token");
-
-    if (token) {
-      localStorage.setItem("spotify_token", token);
-      document.getElementById("status").innerText = "✅ Spotifyにログインしました";
-      document.getElementById("loginBtn").style.display = "none";
-      document.getElementById("logoutBtn").style.display = "inline-block";
-
-      // URLから #access_token を消す
-      window.history.replaceState({}, document.title, REDIRECT_URI);
-    }
-  } else {
-    // すでにログイン済みなら状態復元
-    const token = localStorage.getItem("spotify_token");
-    if (token) {
-      document.getElementById("status").innerText = "✅ Spotifyにログイン中";
-      document.getElementById("loginBtn").style.display = "none";
-      document.getElementById("logoutBtn").style.display = "inline-block";
-    }
+// --- ページ読み込み時にログイン状態をチェック ---
+function checkSpotifyLogin() {
+  const token = localStorage.getItem("spotify_token");
+  if (token) {
+    document.getElementById("status").innerText = "✅ Spotifyにログイン中";
+    document.getElementById("loginBtn").style.display = "none";
+    document.getElementById("logoutBtn").style.display = "inline-block";
   }
 }
-window.addEventListener("DOMContentLoaded", handleRedirectImplicit);
+window.addEventListener("DOMContentLoaded", checkSpotifyLogin);
 
-// --- Spotify 検索 ---
+// --- Spotify検索 ---
 async function searchSpotify() {
   const token = localStorage.getItem("spotify_token");
   if (!token) {
@@ -1182,9 +1160,7 @@ async function searchSpotify() {
   const query = document.getElementById("query").value;
   const type = document.getElementById("searchType").value;
 
-  let searchTypes = "track,artist";
-  if (type === "track") searchTypes = "track";
-  if (type === "artist") searchTypes = "artist";
+  let searchTypes = (type === "all") ? "track,artist" : type;
 
   const res = await fetch(`https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=${searchTypes}`, {
     headers: { Authorization: `Bearer ${token}` }
@@ -1192,7 +1168,7 @@ async function searchSpotify() {
   const data = await res.json();
 
   let html = "";
-  if (data.tracks && data.tracks.items) {
+  if (data.tracks?.items) {
     data.tracks.items.forEach(track => {
       html += `
         <div class="result">
@@ -1203,7 +1179,7 @@ async function searchSpotify() {
       `;
     });
   }
-  if (data.artists && data.artists.items) {
+  if (data.artists?.items) {
     data.artists.items.forEach(artist => {
       html += `
         <div class="result">
@@ -1216,6 +1192,7 @@ async function searchSpotify() {
 
   document.getElementById("results").innerHTML = html || "検索結果なし";
 }
+
 </script>
 </body>
 </html>
