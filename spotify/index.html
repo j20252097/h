@@ -2,8 +2,8 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Spotify Search (PKCE)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Spotify 検索 (PKCE)</title>
   <style>
     body {
       font-family: "Segoe UI", sans-serif;
@@ -11,31 +11,30 @@
       color: #fff;
       text-align: center;
       margin: 0;
-      padding: 0;
+      padding: 1rem;
     }
-
-    h2 {
+    h1 {
       color: #1db954;
-      margin-top: 1rem;
+      margin-bottom: 1rem;
     }
-
-    input, button {
+    input, select, button {
       padding: 0.6rem;
       border-radius: 6px;
       border: 1px solid #1db954;
       margin: 0.3rem;
     }
-
+    input, select {
+      background: #000;
+      color: #fff;
+    }
     button {
       background: #1db954;
       color: #fff;
       cursor: pointer;
     }
-
     button:hover {
       background: #17a74a;
     }
-
     .result {
       margin: 1rem auto;
       padding: 1rem;
@@ -44,29 +43,38 @@
       max-width: 600px;
       text-align: left;
     }
-
-    img {
+    .result img {
       border-radius: 6px;
+      max-width: 100%;
     }
-
     #status {
       margin-top: 1rem;
       font-weight: bold;
       color: #1db954;
     }
+    audio {
+      width: 100%;
+      margin-top: 0.5rem;
+    }
   </style>
 </head>
 <body>
-  <div class="spotify-app">
-    <h2>Spotify 検索</h2>
-    <input type="text" id="query" placeholder="曲名やアーティスト名を入力">
-    <button onclick="searchSpotify()">検索</button>
-    <button id="loginBtn" onclick="loginWithSpotify()">Spotifyログイン</button>
-    <button id="logoutBtn" onclick="logoutFromSpotify()" style="display:none;">ログアウト</button>
+  <h1>Spotify 検索</h1>
+  <input type="text" id="query" placeholder="曲名やアーティスト名を入力">
+  <select id="searchType">
+    <option value="all">全体検索</option>
+    <option value="track">曲のみ</option>
+    <option value="artist">アーティストのみ</option>
+  </select>
+  <br>
+  <button onclick="searchSpotify()">検索</button>
+  <button id="loginBtn" onclick="loginWithSpotify()">Spotifyログイン</button>
+  <button id="logoutBtn" onclick="logoutFromSpotify()" style="display:none;">ログアウト</button>
 
-    <div id="status"></div>
-    <div id="results"></div>
-  </div>
+  <div id="status"></div>
+  <div id="results"></div>
+
+  <button onclick="goHome()">機能選択に戻る</button>
 
   <script>
     const CLIENT_ID = "e7189e285dae4cf78008255f90cc113d";
@@ -164,8 +172,6 @@
       });
 
       const data = await response.json();
-      console.log("token response", data);
-
       if (data.access_token) {
         localStorage.setItem("spotify_token", data.access_token);
         document.getElementById("status").innerText = "✅ ログイン完了しました";
@@ -186,15 +192,18 @@
       }
 
       const query = document.getElementById("query").value;
+      const type = document.getElementById("searchType").value;
       if (!query) return alert("検索ワードを入力してください");
 
-      const res = await fetch(`https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=track,artist&limit=5`, {
+      let searchTypes = "";
+      if (type === "all") searchTypes = "track,artist";
+      else searchTypes = type;
+
+      const res = await fetch(`https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=${searchTypes}&limit=5`, {
         headers: { "Authorization": "Bearer " + accessToken }
       });
 
       const data = await res.json();
-      console.log("search result", data);
-
       const resultsDiv = document.getElementById("results");
       resultsDiv.innerHTML = "";
 
@@ -210,8 +219,10 @@
           div.className = "result";
           div.innerHTML = `
             <p><b>🎵 ${track.name}</b> - ${track.artists.map(a => a.name).join(", ")}</p>
-            <img src="${track.album.images[0]?.url}" width="200"><br>
-            ${track.preview_url ? `<audio controls src="${track.preview_url}"></audio>` : `<p>プレビューなし</p>`}
+            <img src="${track.album.images[0]?.url || ""}" width="200"><br>
+            <audio controls src="${track.preview_url || ""}"></audio>
+            <p>アルバム: ${track.album.name}</p>
+            <p><a href="${track.external_urls.spotify}" target="_blank">Spotifyで見る</a></p>
           `;
           resultsDiv.appendChild(div);
         });
@@ -233,7 +244,12 @@
       }
     }
 
-    // ページロード時に認証処理
+    // 戻る
+    function goHome() {
+      window.location.href = "../index.html";
+    }
+
+    // ページロード時
     handleRedirectCallback();
   </script>
 </body>
