@@ -81,7 +81,7 @@
     const REDIRECT_URI = "https://j20252097.github.io/h/spotify/index.html";
     const SCOPES = "user-read-private user-read-email";
 
-    // --- PKCE ---
+    // --- PKCE ユーティリティ ---
     function generateRandomString(length) {
       const possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
       let text = "";
@@ -140,7 +140,7 @@
       document.getElementById("results").innerHTML = "";
     }
 
-    // --- 認証後 ---
+    // --- 認証後の処理 ---
     async function handleRedirectCallback() {
       const params = new URLSearchParams(window.location.search);
       const code = params.get("code");
@@ -177,7 +177,9 @@
         document.getElementById("status").innerText = "✅ ログイン完了しました";
         document.getElementById("loginBtn").style.display = "none";
         document.getElementById("logoutBtn").style.display = "inline-block";
-        window.history.replaceState({}, document.title, REDIRECT_URI);
+
+        // 🎯 メインページに戻す
+        window.location.href = "../index.html";
       } else {
         document.getElementById("status").innerText = "❌ ログイン失敗しました";
       }
@@ -195,9 +197,7 @@
       const type = document.getElementById("searchType").value;
       if (!query) return alert("検索ワードを入力してください");
 
-      let searchTypes = "";
-      if (type === "all") searchTypes = "track,artist";
-      else searchTypes = type;
+      let searchTypes = (type === "all") ? "track,artist" : type;
 
       const res = await fetch(`https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=${searchTypes}&limit=5`, {
         headers: { "Authorization": "Bearer " + accessToken }
@@ -249,7 +249,7 @@
       window.location.href = "../index.html";
     }
 
-    // ページロード時
+    // ページロード時に処理
     handleRedirectCallback();
   </script>
 </body>
