@@ -293,7 +293,7 @@
     <button class="spotify-btn" onclick="showSection('blockblast')">blockblast</button>
     <button class="spotify-btn" onclick="showSection('2048')">2048</button>
     <button class="spotify-btn" onclick="showSection('mangaraw')">MangaRaw</button>
-    <button class="spotify-btn" onclick="showSpotify('spotify')">Spotify検索</button>
+   <button class="spotify-btn" onclick="showSection('spotify')">Spotify検索</button>
     </header>
 
   <!-- === 画像生成 === -->
@@ -538,35 +538,6 @@
   <br>
   <button class="spotify-btn" onclick="showSection('home')">機能選択に戻る</button>
 </section>
-
-<script>
-async function loadSpotify() {
-  try {
-    const res = await fetch("spotify/index.html");
-    const text = await res.text();
-
-    // <body> 内だけ抽出
-    const bodyContent = text.match(/<body[^>]*>([\s\S]*)<\/body>/i)[1];
-
-    // 差し込み
-    document.getElementById("spotify-container").innerHTML = bodyContent;
-
-    // Spotify用JSを読み込む（index.html には <script src="spotify.js"> を書かない）
-    const script = document.createElement("script");
-    script.src = "spotify/index.html";
-    document.body.appendChild(script);
-
-  } catch (e) {
-    console.error("Spotifyページの読み込みに失敗しました", e);
-  }
-}
-
-// Spotifyセクションを開いた時だけ読み込む
-function showSpotify() {
-  loadSpotify();
-  showSection('spotify');
-}
-</script>
 <script>
     // === 共通セクション切替 ===
     function showSection(id) {
