@@ -295,6 +295,7 @@
     <button class="spotify-btn" onclick="showSection('mangaraw')">MangaRaw</button>
    <button class="spotify-btn" onclick="showSection('spotify')">Spotify検索</button>
     <button class="spotify-btn" onclick="showSection('E')">英単語</button>
+    <button class="spotify-btn" onclick="showSection('J')">人狼</button>
     </header>
 
   <!-- === 画像生成 === -->
@@ -543,6 +544,18 @@
 <section id="E" class="container">
   <h2>📖 英単語</h2>
   <iframe src="E/index.html"
+          width="100%"
+          height="1200"
+          style="border:2px solid #1db954; border-radius:10px; background:#fff;"
+          allowfullscreen>
+  </iframe>
+  <br>
+  <button class="spotify-btn" onclick="showSection('home')">機能選択に戻る</button>
+</section>
+      <!-- === 人狼 === -->
+<section id="J" class="container">
+  <h2>🐺 人狼</h2>
+  <iframe src="J/index.html"
           width="100%"
           height="1200"
           style="border:2px solid #1db954; border-radius:10px; background:#fff;"
