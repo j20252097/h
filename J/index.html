@@ -19,19 +19,16 @@
   button:hover { background:#1db954; }
   input, select { background:#222; color:#fff; }
 
-  /* プレイヤー登録 */
   #playerSetup, #roleSetup, #gmScreen, #resultScreen { display:none; }
   .playerList { margin-top:1rem; }
   .playerItem { margin:.3rem 0; }
 
-  /* タブ */
   .tabs { display:flex; margin-top:1rem; }
   .tabs button { flex:1; background:#333; }
   .tabs button.active { background:#1db954; }
   .tabContent { display:none; padding:1rem; background:#1e1e1e; border-radius:8px; margin-top:1rem; }
   .tabContent.active { display:block; }
 
-  /* プレイヤーリスト */
   .lists { display:flex; gap:2rem; margin-top:1rem; }
   .lists div { flex:1; background:#222; padding:1rem; border-radius:8px; }
   .dead { color:#e22134; text-decoration:line-through; }
@@ -43,6 +40,22 @@
   .win-wolf { background:#b71c1c; animation:flash 1s infinite alternate; }
   .win-fox { background:#f57f17; animation:flash 1s infinite alternate; }
   @keyframes flash { from{opacity:1;} to{opacity:0.5;} }
+
+  /* モーダル */
+  #modalOverlay {
+    display:none; position:fixed; top:0; left:0; width:100%; height:100%;
+    background:rgba(0,0,0,0.9); z-index:1000; justify-content:center; align-items:center;
+  }
+  #modalContent {
+    background:#1e1e1e; padding:2rem; border-radius:12px; text-align:center; max-width:500px;
+    animation:pop 0.5s ease;
+  }
+  #modalContent h2 { font-size:2rem; margin-bottom:1rem; }
+  #modalContent button { background:#1db954; }
+  @keyframes pop {
+    0% { transform:scale(0.7); opacity:0; }
+    100% { transform:scale(1); opacity:1; }
+  }
 </style>
 </head>
 <body>
@@ -83,12 +96,10 @@
       <div id="seer" class="tabContent">
         <h3>占い師の占い対象</h3>
         <div id="seerTargets"></div>
-        <p id="seerResult"></p>
       </div>
       <div id="medium" class="tabContent">
         <h3>霊媒師の対象</h3>
         <div id="mediumTargets"></div>
-        <p id="mediumResult"></p>
       </div>
       <div id="knight" class="tabContent">
         <h3>騎士の護衛対象</h3>
@@ -121,18 +132,24 @@
       <h2 id="resultText"></h2>
       <button onclick="restartGame()">リスタート</button>
     </section>
+
+    <!-- モーダル -->
+    <div id="modalOverlay">
+      <div id="modalContent">
+        <h2 id="modalMessage"></h2>
+        <button onclick="closeModal()">閉じる</button>
+      </div>
+    </div>
   </main>
 
 <script>
-  // ==== データ ====
   let players = [];
   let roles = [
     "市民","占い師","騎士","霊媒師","パン屋","ラバーズ","人狼","狂信者","白狼","狐"
   ];
-  let roleSettings = {}; // {役職:人数}
-  let wolfTarget=null, seerTarget=null, seerResult="", mediumTarget=null, knightTarget=null;
+  let roleSettings = {};
+  let wolfTarget=null, seerTarget=null, mediumTarget=null, knightTarget=null;
 
-  // ==== プレイヤー登録 ====
   function addPlayer(){
     let name=document.getElementById("playerName").value.trim();
     if(!name) return;
@@ -150,15 +167,12 @@
       list.appendChild(div);
     });
   }
-
   function gotoRoleSetup(){
     if(players.length<3){ alert("プレイヤーが少なすぎます"); return; }
     document.getElementById("playerSetup").style.display="none";
     document.getElementById("roleSetup").style.display="block";
     renderRoleConfig();
   }
-
-  // ==== 役職設定 ====
   function renderRoleConfig(){
     let div=document.getElementById("roleConfig");
     div.innerHTML="";
@@ -173,34 +187,27 @@
       div.appendChild(document.createElement("br"));
     });
   }
-
   function assignRoles(){
-    roleSettings={};
-    let total=0;
+    roleSettings={}; let total=0;
     roles.forEach(r=>{
       let val=parseInt(document.getElementById("role_"+r).value||0);
-      if(r==="ラバーズ" && val===1) val=2; // ラバーズは必ずペア
+      if(r==="ラバーズ" && val===1) val=2;
       if(val>0){ roleSettings[r]=val; total+=val; }
     });
     if(total!==players.length){ alert("役職人数とプレイヤー数が一致していません"); return; }
-    // シャッフル配布
-    let bag=[];
-    for(let r in roleSettings){ for(let i=0;i<roleSettings[r];i++) bag.push(r); }
+    let bag=[]; for(let r in roleSettings){ for(let i=0;i<roleSettings[r];i++) bag.push(r); }
     bag=bag.sort(()=>Math.random()-0.5);
     players.forEach((p,i)=>{ p.role=bag[i]; p.alive=true; p.mediumChecked=false; });
     startGame();
   }
-
-  // ==== ゲーム開始 ====
   function startGame(){
     document.getElementById("roleSetup").style.display="none";
     document.getElementById("gmScreen").style.display="block";
     renderAll();
   }
-
   function restartGame(){
     players=[]; roleSettings={};
-    wolfTarget=seerTarget=seerResult=mediumTarget=knightTarget=null;
+    wolfTarget=seerTarget=mediumTarget=knightTarget=null;
     document.getElementById("playerSetup").style.display="block";
     document.getElementById("roleSetup").style.display="none";
     document.getElementById("gmScreen").style.display="none";
@@ -218,7 +225,6 @@
     document.getElementById("resultText").textContent="ゲームを終了しました";
   }
 
-  // ==== タブ処理 ====
   function openTab(id){
     document.querySelectorAll(".tabContent").forEach(c=>c.classList.remove("active"));
     document.querySelectorAll(".tabs button").forEach(b=>b.classList.remove("active"));
@@ -227,7 +233,6 @@
     renderAll();
   }
 
-  // ==== レンダリング ====
   function renderAll(){
     renderPlayerLists();
     renderTargets("wolfTargets", setWolfTarget);
@@ -241,9 +246,8 @@
     alive.innerHTML=""; dead.innerHTML="";
     players.forEach(p=>{
       let li=document.createElement("li");
-      li.textContent=p.name+" ("+p.role+")";
-      if(p.alive) alive.appendChild(li);
-      else{ li.className="dead"; dead.appendChild(li); }
+      if(p.alive){ li.textContent=p.name; alive.appendChild(li); }
+      else{ li.textContent=p.name+" ("+p.role+")"; li.className="dead"; dead.appendChild(li); }
     });
   }
   function renderTargets(containerId, callback){
@@ -268,20 +272,20 @@
         let res=(p.role==="人狼")?"人狼":
                 (p.role==="白狼")?"白狼":
                 (p.role==="ラバーズ")?"ラバーズ":"市民";
-        document.getElementById("mediumResult").textContent=`霊媒結果: ${p.name} は ${res}`;
+        showModal(`霊媒結果: ${p.name} は ${res}`);
       };
       div.appendChild(btn);
     });
   }
 
-  // ==== 各アクション ====
   function setWolfTarget(p){ wolfTarget=p; alert("人狼が "+p.name+" を襲撃予定"); }
   function setSeerTarget(p){
     seerTarget=p;
-    if(p.role==="人狼"){ seerResult="人狼です"; }
-    else if(p.role==="白狼"){ seerResult="市民です"; }
-    else { seerResult="市民です"; }
-    document.getElementById("seerResult").textContent=`占い結果: ${p.name} は ${seerResult}`;
+    let res="";
+    if(p.role==="人狼"){ res="人狼です"; }
+    else if(p.role==="白狼"){ res="市民です"; }
+    else { res="市民です"; }
+    showModal(`占い結果: ${p.name} は ${res}`);
   }
   function setKnightTarget(p){ knightTarget=p; alert("騎士が "+p.name+" を護衛予定"); }
 
@@ -294,33 +298,21 @@
         wolfTarget.alive=false;
         result=wolfTarget.name+" が人狼に襲撃され死亡！";
       }
-    }else{
-      result="今夜は誰も襲撃されませんでした。";
-    }
+    }else{ result="今夜は誰も襲撃されませんでした。"; }
     document.getElementById("nightResult").textContent=result;
-    wolfTarget=seerTarget=seerResult=mediumTarget=knightTarget=null;
+    wolfTarget=seerTarget=mediumTarget=knightTarget=null;
     renderAll();
   }
 
-  // ==== 勝利判定 ====
   function checkWin(){
     let alive=players.filter(p=>p.alive);
     let wolves=alive.filter(p=>p.role==="人狼"||p.role==="白狼");
     let foxes=alive.filter(p=>p.role==="狐");
     let citizens=alive.filter(p=>!["人狼","白狼","狐"].includes(p.role));
 
-    if(foxes.length>0 && alive.length===foxes.length){
-      showResult("狐の勝利！","win-fox");
-      return;
-    }
-    if(wolves.length===0){
-      showResult("市民陣営の勝利！","win-citizen");
-      return;
-    }
-    if(wolves.length>=citizens.length){
-      showResult("人狼陣営の勝利！","win-wolf");
-      return;
-    }
+    if(foxes.length>0 && alive.length===foxes.length){ showResult("狐の勝利！","win-fox"); return; }
+    if(wolves.length===0){ showResult("市民陣営の勝利！","win-citizen"); return; }
+    if(wolves.length>=citizens.length){ showResult("人狼陣営の勝利！","win-wolf"); return; }
     alert("まだ勝敗はついていません");
   }
   function showResult(text,cls){
@@ -330,7 +322,14 @@
     document.body.className=cls;
   }
 
-  // 初期画面
+  function showModal(msg){
+    document.getElementById("modalMessage").textContent=msg;
+    document.getElementById("modalOverlay").style.display="flex";
+  }
+  function closeModal(){
+    document.getElementById("modalOverlay").style.display="none";
+  }
+
   document.getElementById("playerSetup").style.display="block";
 </script>
 </body>
