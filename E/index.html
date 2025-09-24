@@ -6,65 +6,25 @@
   <title>英単語4択クイズ</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css" />
   <style>
-    body {
-      background-color: #121212;
-      color: #ffffff;
-      font-family: "Helvetica Neue", Arial, sans-serif;
-    }
-    nav {
-      background: #1db954;
-      color: #fff;
-    }
-    main.container {
-      margin-top: 2rem;
-      text-align: center;
-    }
+    body { background:#121212; color:#fff; font-family:"Helvetica Neue",Arial,sans-serif; }
+    nav { background:#1db954; color:#fff; }
+    main.container { margin-top:2rem; text-align:center; }
     .quiz-box {
-      background: #1e1e1e;
-      padding: 2rem;
-      border-radius: 16px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.6);
-      max-width: 600px;
-      margin: auto;
+      background:#1e1e1e; padding:2rem; border-radius:16px;
+      box-shadow:0 4px 12px rgba(0,0,0,0.6); max-width:600px; margin:auto;
     }
-    #question {
-      color: #ffffff;
-      font-size: 1.5rem;
-      margin-bottom: 1.5rem;
-    }
+    #question { font-size:1.5rem; margin-bottom:1.5rem; }
     button.option {
-      display: block;
-      width: 100%;
-      margin: 0.5rem 0;
-      padding: 1rem;
-      border-radius: 12px;
-      font-size: 1.2rem;
-      background: #282828;
-      color: #fff;
-      border: none;
-      cursor: pointer;
-      transition: 0.3s;
+      display:block; width:100%; margin:0.5rem 0; padding:1rem;
+      border-radius:12px; font-size:1.2rem; background:#282828;
+      color:#fff; border:none; cursor:pointer; transition:0.3s;
     }
-    button.option:hover {
-      background: #1db954;
-    }
-    .correct {
-      background: #1db954 !important;
-      animation: pop 0.4s ease;
-    }
-    .wrong {
-      background: #e22134 !important;
-      animation: shake 0.4s ease;
-    }
-    @keyframes pop {
-      0% { transform: scale(1); }
-      50% { transform: scale(1.1); }
-      100% { transform: scale(1); }
-    }
+    button.option:hover { background:#1db954; }
+    .correct { background:#1db954 !important; animation:pop 0.4s ease; }
+    .wrong { background:#e22134 !important; animation:shake 0.4s ease; }
+    @keyframes pop { 0%{transform:scale(1);}50%{transform:scale(1.1);}100%{transform:scale(1);} }
     @keyframes shake {
-      0%, 100% { transform: translateX(0); }
-      25% { transform: translateX(-5px); }
-      75% { transform: translateX(5px); }
+      0%,100%{transform:translateX(0);}25%{transform:translateX(-5px);}75%{transform:translateX(5px);}
     }
   </style>
 </head>
@@ -73,6 +33,17 @@
   <nav class="container-fluid">
     <ul><li><strong>英単語クイズ</strong></li></ul>
     <ul>
+      <li>
+        <select id="rangeSelect">
+          <option value="">範囲を選択</option>
+          <option value="1-100">1〜100</option>
+          <option value="101-200">101〜200</option>
+          <option value="201-300">201〜300</option>
+          <option value="301-400">301〜400</option>
+          <option value="random400">ランダム400</option>
+          <option value="mistakes">間違い直しモード</option>
+        </select>
+      </li>
       <li><a href="#" role="button" id="startBtn">スタート</a></li>
     </ul>
   </nav>
@@ -80,7 +51,7 @@
   <!-- メイン -->
   <main class="container">
     <div class="quiz-box">
-      <h2 id="question">スタートを押して始めてください</h2>
+      <h2 id="question">範囲を選んでスタートしてください</h2>
       <div id="options"></div>
       <p id="feedback"></p>
       <button id="nextBtn" style="display:none;">次の問題へ</button>
@@ -89,6 +60,7 @@
 
   <script>
     let wordList = [];
+    let quizWords = [];
     let currentIndex = 0;
     let currentWord;
 
@@ -97,13 +69,16 @@
     const feedbackEl = document.getElementById("feedback");
     const nextBtn = document.getElementById("nextBtn");
     const startBtn = document.getElementById("startBtn");
+    const rangeSelect = document.getElementById("rangeSelect");
 
+    // シャッフル
     function shuffle(array) {
       return array.sort(() => Math.random() - 0.5);
     }
 
+    // 問題読み込み
     function loadQuestion() {
-      if (currentIndex >= wordList.length) {
+      if (currentIndex >= quizWords.length) {
         questionEl.textContent = "🎉 全ての問題が終了しました！お疲れさまでした。";
         optionsEl.innerHTML = "";
         feedbackEl.textContent = "";
@@ -115,10 +90,10 @@
       nextBtn.style.display = "none";
       optionsEl.innerHTML = "";
 
-      currentWord = wordList[currentIndex];
+      currentWord = quizWords[currentIndex];
       questionEl.textContent = `第${currentIndex + 1}問: 「${currentWord.meaning}」に当てはまる英単語は？`;
 
-      // 正解 + ランダム3つ
+      // 選択肢作成
       let options = [currentWord];
       while (options.length < 4) {
         const rand = wordList[Math.floor(Math.random() * wordList.length)];
@@ -135,6 +110,7 @@
       });
     }
 
+    // 答えチェック
     function checkAnswer(button, choice) {
       document.querySelectorAll(".option").forEach(b => b.disabled = true);
 
@@ -144,20 +120,54 @@
       } else {
         button.classList.add("wrong");
         feedbackEl.textContent = `❌ 不正解！ 正解は「${currentWord.word}」`;
+        saveMistake(currentWord);
       }
       nextBtn.style.display = "inline-block";
     }
 
+    // 次の問題
     nextBtn.onclick = () => {
       currentIndex++;
       loadQuestion();
     };
 
+    // 間違い保存
+    function saveMistake(word) {
+      let mistakes = JSON.parse(localStorage.getItem("mistakes") || "[]");
+      if (!mistakes.find(w => w.id === word.id)) {
+        mistakes.push(word);
+        localStorage.setItem("mistakes", JSON.stringify(mistakes));
+      }
+    }
+
+    // 範囲選択で問題セット
+    function selectRange(value) {
+      if (value === "mistakes") {
+        return JSON.parse(localStorage.getItem("mistakes") || "[]");
+      }
+      if (value === "random400") {
+        return shuffle([...wordList]).slice(0, 400);
+      }
+      let [start, end] = value.split("-").map(Number);
+      return wordList.filter((_, i) => i + 1 >= start && i + 1 <= end);
+    }
+
+    // スタートボタン
     startBtn.onclick = async () => {
       try {
         const res = await fetch("English-word.json");
         wordList = await res.json();
+        const selected = rangeSelect.value;
+        if (!selected) {
+          questionEl.textContent = "⚠️ 範囲を選んでください";
+          return;
+        }
+        quizWords = selectRange(selected);
         currentIndex = 0;
+        if (quizWords.length === 0) {
+          questionEl.textContent = "⚠️ 問題が見つかりません";
+          return;
+        }
         loadQuestion();
       } catch (err) {
         questionEl.textContent = "⚠️ 単語データを読み込めませんでした";
