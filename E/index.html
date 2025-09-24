@@ -155,7 +155,7 @@
 
     startBtn.onclick = async () => {
       try {
-        const res = await fetch("English-word.json");
+        const res = await fetch("E/English-word.json");
         wordList = await res.json();
         currentIndex = 0;
         loadQuestion();
