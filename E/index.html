@@ -40,8 +40,9 @@
           <option value="101-200">101〜200</option>
           <option value="201-300">201〜300</option>
           <option value="301-400">301〜400</option>
+          <option value="all">1〜最後まで</option>
           <option value="random400">ランダム400</option>
-          <option value="mistakes">間違い直しモード</option>
+          <option value="mistakes">やり直しモード</option>
         </select>
       </li>
       <li><a href="#" role="button" id="startBtn">スタート</a></li>
@@ -147,6 +148,9 @@
       }
       if (value === "random400") {
         return shuffle([...wordList]).slice(0, 400);
+      }
+      if (value === "all") {
+        return [...wordList]; // 全部
       }
       let [start, end] = value.split("-").map(Number);
       return wordList.filter((_, i) => i + 1 >= start && i + 1 <= end);
