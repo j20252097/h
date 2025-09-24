@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>人狼ゲーム</title>
+  <style>
+    body { background:#121212; color:#fff; font-family:sans-serif; text-align:center; }
+    nav { background:#1db954; padding:1rem; }
+    nav h1 { margin:0; }
+    main { max-width:900px; margin:2rem auto; }
+    .player { display:flex; align-items:center; margin:.5rem 0; }
+    .player img { width:40px; height:40px; border-radius:50%; margin-right:.5rem; }
+    .role-setup { display:grid; grid-template-columns:1fr 100px; gap:.5rem; margin-bottom:1rem; }
+    .hidden { display:none; }
+    .card { background:#1e1e1e; padding:1rem; border-radius:8px; margin:1rem 0; }
+  </style>
+</head>
+<body>
+  <nav><h1>人狼ゲーム（プロトタイプ）</h1></nav>
+  <main>
+    <!-- プレイヤー登録 -->
+    <section id="setupPlayers">
+      <h2>プレイヤー登録</h2>
+      <input id="playerName" placeholder="名前を入力">
+      <input id="playerIcon" type="file" accept="image/*">
+      <button onclick="addPlayer()">追加</button>
+      <ul id="playerList"></ul>
+    </section>
+
+    <!-- 役職設定 -->
+    <section id="setupRoles">
+      <h2>役職設定</h2>
+      <div id="rolesArea"></div>
+      <button onclick="startGame()">ゲーム開始</button>
+    </section>
+
+    <!-- ゲーム画面 -->
+    <section id="gameArea" class="hidden">
+      <h2>役職配布結果</h2>
+      <div id="assignedArea"></div>
+    </section>
+  </main>
+
+  <script>
+    const roleDefinitions = {
+      "市民":"特別な能力はなし。人狼を見つけて処刑しよう。",
+      "占い師":"毎晩1人を占い、人狼かどうかが分かる。",
+      "騎士":"毎晩1人を護衛。人狼の襲撃から守れる。",
+      "霊媒師":"処刑された人が人狼だったかどうかを判定できる。",
+      "パン屋":"生存していると朝に「パンを焼いた」とお知らせが出る。",
+      "ラバーズ":"2人1組。片方が死ぬと相方も死亡する。",
+      "人狼":"夜に襲撃して市民を減らす。",
+      "狂信者":"人狼陣営だが人狼と認識されない。占い結果は市民側。",
+      "白狼":"人狼の上位。占いでは白判定、霊媒では人狼と判定。",
+      "狐":"最後まで生き残れば単独勝利。占われると死亡する。"
+    };
+
+    const players = [];
+    const rolesSetup = {};
+    for (let role in roleDefinitions) {
+      rolesSetup[role] = 0;
+    }
+
+    const playerList = document.getElementById("playerList");
+    const rolesArea = document.getElementById("rolesArea");
+    const assignedArea = document.getElementById("assignedArea");
+
+    // UIに役職設定欄を出す
+    function renderRoleSetup() {
+      rolesArea.innerHTML = "";
+      for (let role in rolesSetup) {
+        const div = document.createElement("div");
+        div.className="role-setup";
+        div.innerHTML = `
+          <label>${role} (${roleDefinitions[role]})</label>
+          <input type="number" min="0" value="${rolesSetup[role]}" onchange="rolesSetup['${role}']=parseInt(this.value)">
+        `;
+        rolesArea.appendChild(div);
+      }
+    }
+
+    renderRoleSetup();
+
+    // プレイヤー追加
+    function addPlayer() {
+      const name = document.getElementById("playerName").value.trim();
+      const file = document.getElementById("playerIcon").files[0];
+      if (!name) return;
+      const reader = new FileReader();
+      reader.onload = e => {
+        players.push({name, icon:e.target.result});
+        updatePlayerList();
+      };
+      if (file) {
+        reader.readAsDataURL(file);
+      } else {
+        players.push({name, icon:"https://via.placeholder.com/40"});
+        updatePlayerList();
+      }
+      document.getElementById("playerName").value="";
+      document.getElementById("playerIcon").value="";
+    }
+
+    function updatePlayerList() {
+      playerList.innerHTML="";
+      players.forEach(p=>{
+        const li = document.createElement("li");
+        li.className="player";
+        li.innerHTML=`<img src="${p.icon}"> ${p.name}`;
+        playerList.appendChild(li);
+      });
+    }
+
+    // ゲーム開始
+    function startGame() {
+      let rolePool = [];
+      for (let role in rolesSetup) {
+        for (let i=0; i<rolesSetup[role]; i++) {
+          rolePool.push(role);
+        }
+      }
+      if (rolePool.length !== players.length) {
+        alert("プレイヤー数と役職数が一致していません！");
+        return;
+      }
+      // シャッフル
+      rolePool = shuffle(rolePool);
+      players.forEach((p,i)=>p.role=rolePool[i]);
+
+      document.getElementById("setupPlayers").classList.add("hidden");
+      document.getElementById("setupRoles").classList.add("hidden");
+      document.getElementById("gameArea").classList.remove("hidden");
+
+      assignedArea.innerHTML="";
+      players.forEach(p=>{
+        const div=document.createElement("div");
+        div.className="card";
+        div.innerHTML=`<img src="${p.icon}" width="50"><h3>${p.name}</h3><p>${p.role}</p><small>${roleDefinitions[p.role]}</small>`;
+        assignedArea.appendChild(div);
+      });
+    }
+
+    function shuffle(array) {
+      for (let i=array.length-1;i>0;i--){
+        const j=Math.floor(Math.random()*(i+1));
+        [array[i],array[j]]=[array[j],array[i]];
+      }
+      return array;
+    }
+  </script>
+</body>
+</html>
