@@ -1,153 +1,337 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>人狼ゲーム</title>
-  <style>
-    body { background:#121212; color:#fff; font-family:sans-serif; text-align:center; }
-    nav { background:#1db954; padding:1rem; }
-    nav h1 { margin:0; }
-    main { max-width:900px; margin:2rem auto; }
-    .player { display:flex; align-items:center; margin:.5rem 0; }
-    .player img { width:40px; height:40px; border-radius:50%; margin-right:.5rem; }
-    .role-setup { display:grid; grid-template-columns:1fr 100px; gap:.5rem; margin-bottom:1rem; }
-    .hidden { display:none; }
-    .card { background:#1e1e1e; padding:1rem; border-radius:8px; margin:1rem 0; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>人狼ゲーム (GM進行)</title>
+<style>
+  body { background:#121212; color:#fff; font-family:sans-serif; margin:0; }
+  nav { background:#1db954; padding:.5rem; text-align:center; }
+  nav h1 { margin:0; font-size:1.5rem; }
+  main { max-width:960px; margin:1rem auto; padding:1rem; }
+
+  /* 共通 */
+  button, select, input {
+    padding:.5rem 1rem; margin:.2rem; border:none; border-radius:6px;
+    cursor:pointer; font-size:1rem;
+  }
+  button { background:#333; color:#fff; }
+  button:hover { background:#1db954; }
+  input, select { background:#222; color:#fff; }
+
+  /* プレイヤー登録 */
+  #playerSetup, #roleSetup, #gmScreen, #resultScreen { display:none; }
+  .playerList { margin-top:1rem; }
+  .playerItem { margin:.3rem 0; }
+
+  /* タブ */
+  .tabs { display:flex; margin-top:1rem; }
+  .tabs button { flex:1; background:#333; }
+  .tabs button.active { background:#1db954; }
+  .tabContent { display:none; padding:1rem; background:#1e1e1e; border-radius:8px; margin-top:1rem; }
+  .tabContent.active { display:block; }
+
+  /* プレイヤーリスト */
+  .lists { display:flex; gap:2rem; margin-top:1rem; }
+  .lists div { flex:1; background:#222; padding:1rem; border-radius:8px; }
+  .dead { color:#e22134; text-decoration:line-through; }
+
+  /* 勝利演出 */
+  #resultScreen { text-align:center; padding:2rem; }
+  #resultScreen h2 { font-size:2.5rem; }
+  .win-citizen { background:#2e7d32; animation:flash 1s infinite alternate; }
+  .win-wolf { background:#b71c1c; animation:flash 1s infinite alternate; }
+  .win-fox { background:#f57f17; animation:flash 1s infinite alternate; }
+  @keyframes flash { from{opacity:1;} to{opacity:0.5;} }
+</style>
 </head>
 <body>
-  <nav><h1>人狼ゲーム（プロトタイプ）</h1></nav>
+  <nav><h1>人狼ゲーム GM進行ツール</h1></nav>
   <main>
     <!-- プレイヤー登録 -->
-    <section id="setupPlayers">
+    <section id="playerSetup">
       <h2>プレイヤー登録</h2>
-      <input id="playerName" placeholder="名前を入力">
-      <input id="playerIcon" type="file" accept="image/*">
+      <input id="playerName" type="text" placeholder="名前を入力">
       <button onclick="addPlayer()">追加</button>
-      <ul id="playerList"></ul>
+      <div class="playerList" id="playerList"></div>
+      <button onclick="gotoRoleSetup()">次へ (役職設定)</button>
     </section>
 
     <!-- 役職設定 -->
-    <section id="setupRoles">
+    <section id="roleSetup">
       <h2>役職設定</h2>
-      <div id="rolesArea"></div>
-      <button onclick="startGame()">ゲーム開始</button>
+      <div id="roleConfig"></div>
+      <button onclick="assignRoles()">役職を配布してゲーム開始</button>
+      <button onclick="restartGame()">リスタート</button>
     </section>
 
-    <!-- ゲーム画面 -->
-    <section id="gameArea" class="hidden">
-      <h2>役職配布結果</h2>
-      <div id="assignedArea"></div>
+    <!-- GM進行画面 -->
+    <section id="gmScreen">
+      <h2>GM進行画面</h2>
+      <div class="tabs">
+        <button onclick="openTab('wolf')" class="active">人狼</button>
+        <button onclick="openTab('seer')">占い師</button>
+        <button onclick="openTab('medium')">霊媒師</button>
+        <button onclick="openTab('knight')">騎士</button>
+        <button onclick="openTab('resolve')">処理結果</button>
+      </div>
+
+      <div id="wolf" class="tabContent active">
+        <h3>人狼の襲撃対象</h3>
+        <div id="wolfTargets"></div>
+      </div>
+      <div id="seer" class="tabContent">
+        <h3>占い師の占い対象</h3>
+        <div id="seerTargets"></div>
+        <p id="seerResult"></p>
+      </div>
+      <div id="medium" class="tabContent">
+        <h3>霊媒師の対象</h3>
+        <div id="mediumTargets"></div>
+        <p id="mediumResult"></p>
+      </div>
+      <div id="knight" class="tabContent">
+        <h3>騎士の護衛対象</h3>
+        <div id="knightTargets"></div>
+      </div>
+      <div id="resolve" class="tabContent">
+        <h3>処理結果</h3>
+        <button onclick="resolveNight()">夜を解決する</button>
+        <p id="nightResult"></p>
+      </div>
+
+      <!-- プレイヤーリスト -->
+      <div class="lists">
+        <div>
+          <h3>生存者</h3>
+          <ul id="aliveList"></ul>
+        </div>
+        <div>
+          <h3>死亡者</h3>
+          <ul id="deadList"></ul>
+        </div>
+      </div>
+      <button onclick="checkWin()">勝利判定</button>
+      <button onclick="restartGame()">リスタート</button>
+      <button onclick="stopGame()">ストップ</button>
+    </section>
+
+    <!-- 勝利画面 -->
+    <section id="resultScreen">
+      <h2 id="resultText"></h2>
+      <button onclick="restartGame()">リスタート</button>
     </section>
   </main>
 
-  <script>
-    const roleDefinitions = {
-      "市民":"特別な能力はなし。人狼を見つけて処刑しよう。",
-      "占い師":"毎晩1人を占い、人狼かどうかが分かる。",
-      "騎士":"毎晩1人を護衛。人狼の襲撃から守れる。",
-      "霊媒師":"処刑された人が人狼だったかどうかを判定できる。",
-      "パン屋":"生存していると朝に「パンを焼いた」とお知らせが出る。",
-      "ラバーズ":"2人1組。片方が死ぬと相方も死亡する。",
-      "人狼":"夜に襲撃して市民を減らす。",
-      "狂信者":"人狼陣営だが人狼と認識されない。占い結果は市民側。",
-      "白狼":"人狼の上位。占いでは白判定、霊媒では人狼と判定。",
-      "狐":"最後まで生き残れば単独勝利。占われると死亡する。"
-    };
+<script>
+  // ==== データ ====
+  let players = [];
+  let roles = [
+    "市民","占い師","騎士","霊媒師","パン屋","ラバーズ","人狼","狂信者","白狼","狐"
+  ];
+  let roleSettings = {}; // {役職:人数}
+  let wolfTarget=null, seerTarget=null, seerResult="", mediumTarget=null, knightTarget=null;
 
-    const players = [];
-    const rolesSetup = {};
-    for (let role in roleDefinitions) {
-      rolesSetup[role] = 0;
-    }
+  // ==== プレイヤー登録 ====
+  function addPlayer(){
+    let name=document.getElementById("playerName").value.trim();
+    if(!name) return;
+    players.push({name, role:null, alive:true, mediumChecked:false});
+    document.getElementById("playerName").value="";
+    renderPlayerList();
+  }
+  function renderPlayerList(){
+    let list=document.getElementById("playerList");
+    list.innerHTML="";
+    players.forEach(p=>{
+      let div=document.createElement("div");
+      div.className="playerItem";
+      div.textContent=p.name;
+      list.appendChild(div);
+    });
+  }
 
-    const playerList = document.getElementById("playerList");
-    const rolesArea = document.getElementById("rolesArea");
-    const assignedArea = document.getElementById("assignedArea");
+  function gotoRoleSetup(){
+    if(players.length<3){ alert("プレイヤーが少なすぎます"); return; }
+    document.getElementById("playerSetup").style.display="none";
+    document.getElementById("roleSetup").style.display="block";
+    renderRoleConfig();
+  }
 
-    // UIに役職設定欄を出す
-    function renderRoleSetup() {
-      rolesArea.innerHTML = "";
-      for (let role in rolesSetup) {
-        const div = document.createElement("div");
-        div.className="role-setup";
-        div.innerHTML = `
-          <label>${role} (${roleDefinitions[role]})</label>
-          <input type="number" min="0" value="${rolesSetup[role]}" onchange="rolesSetup['${role}']=parseInt(this.value)">
-        `;
-        rolesArea.appendChild(div);
-      }
-    }
+  // ==== 役職設定 ====
+  function renderRoleConfig(){
+    let div=document.getElementById("roleConfig");
+    div.innerHTML="";
+    roles.forEach(r=>{
+      let input=document.createElement("input");
+      input.type="number"; input.min=0; input.value=0;
+      input.id="role_"+r;
+      let label=document.createElement("label");
+      label.textContent=r+"：";
+      div.appendChild(label);
+      div.appendChild(input);
+      div.appendChild(document.createElement("br"));
+    });
+  }
 
-    renderRoleSetup();
+  function assignRoles(){
+    roleSettings={};
+    let total=0;
+    roles.forEach(r=>{
+      let val=parseInt(document.getElementById("role_"+r).value||0);
+      if(r==="ラバーズ" && val===1) val=2; // ラバーズは必ずペア
+      if(val>0){ roleSettings[r]=val; total+=val; }
+    });
+    if(total!==players.length){ alert("役職人数とプレイヤー数が一致していません"); return; }
+    // シャッフル配布
+    let bag=[];
+    for(let r in roleSettings){ for(let i=0;i<roleSettings[r];i++) bag.push(r); }
+    bag=bag.sort(()=>Math.random()-0.5);
+    players.forEach((p,i)=>{ p.role=bag[i]; p.alive=true; p.mediumChecked=false; });
+    startGame();
+  }
 
-    // プレイヤー追加
-    function addPlayer() {
-      const name = document.getElementById("playerName").value.trim();
-      const file = document.getElementById("playerIcon").files[0];
-      if (!name) return;
-      const reader = new FileReader();
-      reader.onload = e => {
-        players.push({name, icon:e.target.result});
-        updatePlayerList();
+  // ==== ゲーム開始 ====
+  function startGame(){
+    document.getElementById("roleSetup").style.display="none";
+    document.getElementById("gmScreen").style.display="block";
+    renderAll();
+  }
+
+  function restartGame(){
+    players=[]; roleSettings={};
+    wolfTarget=seerTarget=seerResult=mediumTarget=knightTarget=null;
+    document.getElementById("playerSetup").style.display="block";
+    document.getElementById("roleSetup").style.display="none";
+    document.getElementById("gmScreen").style.display="none";
+    document.getElementById("resultScreen").style.display="none";
+    document.body.className="";
+    document.getElementById("resultText").textContent="";
+    renderPlayerList();
+  }
+  function stopGame(){
+    document.getElementById("playerSetup").style.display="none";
+    document.getElementById("roleSetup").style.display="none";
+    document.getElementById("gmScreen").style.display="none";
+    document.getElementById("resultScreen").style.display="block";
+    document.body.className="";
+    document.getElementById("resultText").textContent="ゲームを終了しました";
+  }
+
+  // ==== タブ処理 ====
+  function openTab(id){
+    document.querySelectorAll(".tabContent").forEach(c=>c.classList.remove("active"));
+    document.querySelectorAll(".tabs button").forEach(b=>b.classList.remove("active"));
+    document.getElementById(id).classList.add("active");
+    event.target.classList.add("active");
+    renderAll();
+  }
+
+  // ==== レンダリング ====
+  function renderAll(){
+    renderPlayerLists();
+    renderTargets("wolfTargets", setWolfTarget);
+    renderTargets("seerTargets", setSeerTarget);
+    renderTargets("knightTargets", setKnightTarget);
+    renderMedium();
+  }
+  function renderPlayerLists(){
+    let alive=document.getElementById("aliveList");
+    let dead=document.getElementById("deadList");
+    alive.innerHTML=""; dead.innerHTML="";
+    players.forEach(p=>{
+      let li=document.createElement("li");
+      li.textContent=p.name+" ("+p.role+")";
+      if(p.alive) alive.appendChild(li);
+      else{ li.className="dead"; dead.appendChild(li); }
+    });
+  }
+  function renderTargets(containerId, callback){
+    let div=document.getElementById(containerId);
+    div.innerHTML="";
+    players.filter(p=>p.alive).forEach(p=>{
+      let btn=document.createElement("button");
+      btn.textContent=p.name;
+      btn.onclick=()=>callback(p);
+      div.appendChild(btn);
+    });
+  }
+  function renderMedium(){
+    let div=document.getElementById("mediumTargets");
+    div.innerHTML="";
+    let dead=players.filter(p=>!p.alive && !p.mediumChecked);
+    dead.forEach(p=>{
+      let btn=document.createElement("button");
+      btn.textContent=p.name;
+      btn.onclick=()=>{
+        p.mediumChecked=true;
+        let res=(p.role==="人狼")?"人狼":
+                (p.role==="白狼")?"白狼":
+                (p.role==="ラバーズ")?"ラバーズ":"市民";
+        document.getElementById("mediumResult").textContent=`霊媒結果: ${p.name} は ${res}`;
       };
-      if (file) {
-        reader.readAsDataURL(file);
-      } else {
-        players.push({name, icon:"https://via.placeholder.com/40"});
-        updatePlayerList();
+      div.appendChild(btn);
+    });
+  }
+
+  // ==== 各アクション ====
+  function setWolfTarget(p){ wolfTarget=p; alert("人狼が "+p.name+" を襲撃予定"); }
+  function setSeerTarget(p){
+    seerTarget=p;
+    if(p.role==="人狼"){ seerResult="人狼です"; }
+    else if(p.role==="白狼"){ seerResult="市民です"; }
+    else { seerResult="市民です"; }
+    document.getElementById("seerResult").textContent=`占い結果: ${p.name} は ${seerResult}`;
+  }
+  function setKnightTarget(p){ knightTarget=p; alert("騎士が "+p.name+" を護衛予定"); }
+
+  function resolveNight(){
+    let result="";
+    if(wolfTarget){
+      if(knightTarget && wolfTarget===knightTarget){
+        result="騎士が "+knightTarget.name+" を守り、襲撃失敗！";
+      }else{
+        wolfTarget.alive=false;
+        result=wolfTarget.name+" が人狼に襲撃され死亡！";
       }
-      document.getElementById("playerName").value="";
-      document.getElementById("playerIcon").value="";
+    }else{
+      result="今夜は誰も襲撃されませんでした。";
     }
+    document.getElementById("nightResult").textContent=result;
+    wolfTarget=seerTarget=seerResult=mediumTarget=knightTarget=null;
+    renderAll();
+  }
 
-    function updatePlayerList() {
-      playerList.innerHTML="";
-      players.forEach(p=>{
-        const li = document.createElement("li");
-        li.className="player";
-        li.innerHTML=`<img src="${p.icon}"> ${p.name}`;
-        playerList.appendChild(li);
-      });
+  // ==== 勝利判定 ====
+  function checkWin(){
+    let alive=players.filter(p=>p.alive);
+    let wolves=alive.filter(p=>p.role==="人狼"||p.role==="白狼");
+    let foxes=alive.filter(p=>p.role==="狐");
+    let citizens=alive.filter(p=>!["人狼","白狼","狐"].includes(p.role));
+
+    if(foxes.length>0 && alive.length===foxes.length){
+      showResult("狐の勝利！","win-fox");
+      return;
     }
-
-    // ゲーム開始
-    function startGame() {
-      let rolePool = [];
-      for (let role in rolesSetup) {
-        for (let i=0; i<rolesSetup[role]; i++) {
-          rolePool.push(role);
-        }
-      }
-      if (rolePool.length !== players.length) {
-        alert("プレイヤー数と役職数が一致していません！");
-        return;
-      }
-      // シャッフル
-      rolePool = shuffle(rolePool);
-      players.forEach((p,i)=>p.role=rolePool[i]);
-
-      document.getElementById("setupPlayers").classList.add("hidden");
-      document.getElementById("setupRoles").classList.add("hidden");
-      document.getElementById("gameArea").classList.remove("hidden");
-
-      assignedArea.innerHTML="";
-      players.forEach(p=>{
-        const div=document.createElement("div");
-        div.className="card";
-        div.innerHTML=`<img src="${p.icon}" width="50"><h3>${p.name}</h3><p>${p.role}</p><small>${roleDefinitions[p.role]}</small>`;
-        assignedArea.appendChild(div);
-      });
+    if(wolves.length===0){
+      showResult("市民陣営の勝利！","win-citizen");
+      return;
     }
-
-    function shuffle(array) {
-      for (let i=array.length-1;i>0;i--){
-        const j=Math.floor(Math.random()*(i+1));
-        [array[i],array[j]]=[array[j],array[i]];
-      }
-      return array;
+    if(wolves.length>=citizens.length){
+      showResult("人狼陣営の勝利！","win-wolf");
+      return;
     }
-  </script>
+    alert("まだ勝敗はついていません");
+  }
+  function showResult(text,cls){
+    document.getElementById("gmScreen").style.display="none";
+    document.getElementById("resultScreen").style.display="block";
+    document.getElementById("resultText").textContent=text;
+    document.body.className=cls;
+  }
+
+  // 初期画面
+  document.getElementById("playerSetup").style.display="block";
+</script>
 </body>
 </html>
