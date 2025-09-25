@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ブラックジャック</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css">
+  <style>
+    body { background:#121212; color:#fff; }
+    main.container { padding:2rem; }
+    .hand { margin:1rem 0; display:flex; gap:0.5rem; }
+    .card {
+      background:#fff; color:#000; padding:1rem;
+      border-radius:8px; width:50px; text-align:center;
+      font-weight:bold; font-size:1.2rem;
+    }
+    .hidden { background:#444 !important; color:#444 !important; }
+    #log { margin-top:1rem; white-space:pre-line; }
+    #adminPanel { display:none; margin-top:2rem; padding:1rem; border:1px solid #666; border-radius:8px; }
+  </style>
+</head>
+<body>
+  <nav class="container-fluid">
+    <ul><li><strong>ブラックジャック</strong></li></ul>
+    <ul>
+      <li><a href="#">Home</a></li>
+      <li><a href="#">ルール</a></li>
+    </ul>
+  </nav>
+
+  <main class="container">
+    <h2>ブラックジャックゲーム</h2>
+    <p>所持コイン: <span id="coins"></span></p>
+    <label>ベット額: <input type="number" id="bet" min="1" value="10"></label>
+    <button onclick="startGame()">🎲 ゲーム開始</button>
+
+    <h3>ディーラーの手札</h3>
+    <div id="dealerHand" class="hand"></div>
+
+    <h3>あなたの手札</h3>
+    <div id="playerHand" class="hand"></div>
+
+    <div>
+      <button onclick="hit()" id="hitBtn" disabled>ヒット</button>
+      <button onclick="stand()" id="standBtn" disabled>スタンド</button>
+    </div>
+
+    <pre id="log"></pre>
+
+    <h3>管理者コマンド</h3>
+    <input type="password" id="adminPassword" placeholder="パスワード入力">
+    <button onclick="checkAdmin()">ログイン</button>
+
+    <div id="adminPanel">
+      <h4>コイン管理パネル</h4>
+      <label>コイン数: <input type="number" id="adminCoins"></label>
+      <button onclick="updateCoins()">更新</button>
+    </div>
+  </main>
+
+<script>
+  const suits = ["♠", "♥", "♦", "♣"];
+  const ranks = ["A","2","3","4","5","6","7","8","9","10","J","Q","K"];
+  let deck, dealerHand, playerHand, coins, bet;
+  let dealerHidden = true;
+
+  // 初期コイン読み込み
+  coins = parseInt(localStorage.getItem("coins")) || 1000;
+  document.getElementById("coins").innerText = coins;
+
+  function saveCoins() {
+    localStorage.setItem("coins", coins);
+    document.getElementById("coins").innerText = coins;
+  }
+
+  function createDeck() {
+    let d = [];
+    for (let s of suits) {
+      for (let r of ranks) {
+        d.push({suit:s, rank:r});
+      }
+    }
+    return d.sort(() => Math.random()-0.5);
+  }
+
+  function cardValue(card) {
+    if (["J","Q","K"].includes(card.rank)) return 10;
+    if (card.rank === "A") return 11; 
+    return parseInt(card.rank);
+  }
+
+  function handValue(hand) {
+    let total = 0, aces = 0;
+    for (let c of hand) {
+      total += cardValue(c);
+      if (c.rank === "A") aces++;
+    }
+    while (total > 21 && aces > 0) {
+      total -= 10;
+      aces--;
+    }
+    return total;
+  }
+
+  function renderHand(elementId, hand, hideFirst=false) {
+    const el = document.getElementById(elementId);
+    el.innerHTML = "";
+    hand.forEach((c,i)=>{
+      const div = document.createElement("div");
+      div.className = "card";
+      if (i===0 && hideFirst) {
+        div.classList.add("hidden");
+        div.innerText = "？";
+      } else {
+        div.innerText = c.rank + c.suit;
+      }
+      el.appendChild(div);
+    });
+  }
+
+  function log(msg) {
+    document.getElementById("log").innerText += msg + "\n";
+  }
+
+  function startGame() {
+    bet = parseInt(document.getElementById("bet").value);
+    if (bet > coins) { alert("コイン不足！"); return; }
+    coins -= bet; saveCoins();
+
+    deck = createDeck();
+    dealerHand = [deck.pop(), deck.pop()];
+    playerHand = [deck.pop(), deck.pop()];
+    dealerHidden = true;
+
+    document.getElementById("log").innerText = "";
+    renderHand("dealerHand", dealerHand, true);
+    renderHand("playerHand", playerHand, false);
+
+    document.getElementById("hitBtn").disabled = false;
+    document.getElementById("standBtn").disabled = false;
+
+    if (handValue(playerHand) === 21) {
+      endGame(true, true);
+    }
+  }
+
+  function hit() {
+    playerHand.push(deck.pop());
+    renderHand("playerHand", playerHand);
+    if (handValue(playerHand) > 21) {
+      endGame(false);
+    }
+  }
+
+  function stand() {
+    dealerHidden = false;
+    while (handValue(dealerHand) < 17) {
+      dealerHand.push(deck.pop());
+    }
+    endGame();
+  }
+
+  function endGame(playerBlackjack=false) {
+    dealerHidden = false;
+    renderHand("dealerHand", dealerHand, false);
+    let playerVal = handValue(playerHand);
+    let dealerVal = handValue(dealerHand);
+
+    if (playerBlackjack) {
+      if (handValue(dealerHand) === 21) {
+        log("引き分け！（両者ブラックジャック）");
+        coins += bet; 
+      } else {
+        log("ブラックジャック！勝ち！");
+        coins += bet * 2.5;
+      }
+      saveCoins();
+      return;
+    }
+
+    if (playerVal > 21) {
+      log("バスト！負け");
+    } else if (dealerVal > 21 || playerVal > dealerVal) {
+      log("勝ち！");
+      coins += bet * 2;
+    } else if (playerVal === dealerVal) {
+      log("プッシュ（引き分け）");
+      coins += bet;
+    } else {
+      log("負け");
+    }
+
+    saveCoins();
+    document.getElementById("hitBtn").disabled = true;
+    document.getElementById("standBtn").disabled = true;
+  }
+
+  // 管理者機能
+  function checkAdmin() {
+    const pw = document.getElementById("adminPassword").value;
+    if (pw === "20252097") {
+      document.getElementById("adminPanel").style.display = "block";
+      document.getElementById("adminCoins").value = coins;
+    } else {
+      alert("パスワードが違います");
+    }
+  }
+
+  function updateCoins() {
+    coins = parseInt(document.getElementById("adminCoins").value);
+    saveCoins();
+    alert("コイン数を更新しました！");
+  }
+</script>
+</body>
+</html>
