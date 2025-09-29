@@ -28,8 +28,9 @@
     }
     dialog { background:#1e1e1e; color:#fff; border-radius:10px; padding:1rem; }
     dialog h3 { margin-top:0; }
-    dialog ul { max-height:300px; overflow-y:auto; text-align:left; }
-    dialog ul li { padding:4px 0; border-bottom:1px solid #333; }
+    dialog ul { max-height:300px; overflow-y:auto; text-align:left; padding:0; list-style:none; }
+    dialog ul li { padding:6px 0; border-bottom:1px solid #333; cursor:pointer; }
+    .hidden-word { color:#888; font-style:italic; }
   </style>
 </head>
 <body>
@@ -70,7 +71,7 @@
 
   <!-- 単語一覧モーダル -->
   <dialog id="wordListDialog">
-    <h3>単語一覧</h3>
+    <h3>単語一覧（クリックで単語の表示／非表示切替）</h3>
     <ul id="wordListContainer"></ul>
     <button onclick="document.getElementById('wordListDialog').close()">閉じる</button>
   </dialog>
@@ -139,7 +140,7 @@
       if (choice.id === currentWord.id) {
         button.classList.add("correct");
         feedbackEl.textContent = "✅ 正解！";
-        removeMistake(currentWord); // 正解したらmistakesから削除
+        removeMistake(currentWord);
       } else {
         button.classList.add("wrong");
         feedbackEl.textContent = `❌ 不正解！ 正解は「${currentWord.word}」`;
@@ -211,12 +212,33 @@
       }
     };
 
-    // 単語一覧表示
+    // 単語一覧表示（単語は最初は隠す → クリックで表示切替）
     listBtn.onclick = () => {
       wordListContainer.innerHTML = "";
       quizWords.forEach((w, i) => {
         const li = document.createElement("li");
-        li.textContent = `${i + 1}. ${w.word} - ${w.meaning}`;
+
+        const wordSpan = document.createElement("span");
+        wordSpan.textContent = "???";
+        wordSpan.classList.add("hidden-word");
+
+        const meaningSpan = document.createElement("span");
+        meaningSpan.textContent = ` - ${w.meaning}`;
+
+        li.appendChild(document.createTextNode(`${i + 1}. `));
+        li.appendChild(wordSpan);
+        li.appendChild(meaningSpan);
+
+        li.onclick = () => {
+          if (wordSpan.textContent === "???") {
+            wordSpan.textContent = w.word;
+            wordSpan.classList.remove("hidden-word");
+          } else {
+            wordSpan.textContent = "???";
+            wordSpan.classList.add("hidden-word");
+          }
+        };
+
         wordListContainer.appendChild(li);
       });
       wordListDialog.showModal();
