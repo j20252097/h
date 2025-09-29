@@ -26,6 +26,10 @@
     @keyframes shake {
       0%,100%{transform:translateX(0);}25%{transform:translateX(-5px);}75%{transform:translateX(5px);}
     }
+    dialog { background:#1e1e1e; color:#fff; border-radius:10px; padding:1rem; }
+    dialog h3 { margin-top:0; }
+    dialog ul { max-height:300px; overflow-y:auto; text-align:left; }
+    dialog ul li { padding:4px 0; border-bottom:1px solid #333; }
   </style>
 </head>
 <body>
@@ -45,7 +49,12 @@
           <option value="mistakes">やり直しモード</option>
         </select>
       </li>
+      <li>
+        <input type="number" id="customStart" placeholder="開始番号" style="width:100px;">
+        <input type="number" id="customEnd" placeholder="終了番号" style="width:100px;">
+      </li>
       <li><a href="#" role="button" id="startBtn">スタート</a></li>
+      <li><a href="#" role="button" id="listBtn">単語一覧</a></li>
     </ul>
   </nav>
 
@@ -59,6 +68,13 @@
     </div>
   </main>
 
+  <!-- 単語一覧モーダル -->
+  <dialog id="wordListDialog">
+    <h3>単語一覧</h3>
+    <ul id="wordListContainer"></ul>
+    <button onclick="document.getElementById('wordListDialog').close()">閉じる</button>
+  </dialog>
+
   <script>
     let wordList = [];
     let quizWords = [];
@@ -71,6 +87,11 @@
     const nextBtn = document.getElementById("nextBtn");
     const startBtn = document.getElementById("startBtn");
     const rangeSelect = document.getElementById("rangeSelect");
+    const customStart = document.getElementById("customStart");
+    const customEnd = document.getElementById("customEnd");
+    const listBtn = document.getElementById("listBtn");
+    const wordListDialog = document.getElementById("wordListDialog");
+    const wordListContainer = document.getElementById("wordListContainer");
 
     // シャッフル
     function shuffle(array) {
@@ -118,6 +139,7 @@
       if (choice.id === currentWord.id) {
         button.classList.add("correct");
         feedbackEl.textContent = "✅ 正解！";
+        removeMistake(currentWord); // 正解したらmistakesから削除
       } else {
         button.classList.add("wrong");
         feedbackEl.textContent = `❌ 不正解！ 正解は「${currentWord.word}」`;
@@ -141,8 +163,20 @@
       }
     }
 
+    // 正解したらmistakesから削除
+    function removeMistake(word) {
+      let mistakes = JSON.parse(localStorage.getItem("mistakes") || "[]");
+      mistakes = mistakes.filter(w => w.id !== word.id);
+      localStorage.setItem("mistakes", JSON.stringify(mistakes));
+    }
+
     // 範囲選択で問題セット
     function selectRange(value) {
+      if (customStart.value && customEnd.value) {
+        let start = Number(customStart.value);
+        let end = Number(customEnd.value);
+        return wordList.filter((_, i) => i + 1 >= start && i + 1 <= end);
+      }
       if (value === "mistakes") {
         return JSON.parse(localStorage.getItem("mistakes") || "[]");
       }
@@ -150,10 +184,13 @@
         return shuffle([...wordList]).slice(0, 400);
       }
       if (value === "all") {
-        return [...wordList]; // 全部
+        return [...wordList];
       }
-      let [start, end] = value.split("-").map(Number);
-      return wordList.filter((_, i) => i + 1 >= start && i + 1 <= end);
+      if (value.includes("-")) {
+        let [start, end] = value.split("-").map(Number);
+        return wordList.filter((_, i) => i + 1 >= start && i + 1 <= end);
+      }
+      return [];
     }
 
     // スタートボタン
@@ -162,10 +199,6 @@
         const res = await fetch("English-word.json");
         wordList = await res.json();
         const selected = rangeSelect.value;
-        if (!selected) {
-          questionEl.textContent = "⚠️ 範囲を選んでください";
-          return;
-        }
         quizWords = selectRange(selected);
         currentIndex = 0;
         if (quizWords.length === 0) {
@@ -176,6 +209,17 @@
       } catch (err) {
         questionEl.textContent = "⚠️ 単語データを読み込めませんでした";
       }
+    };
+
+    // 単語一覧表示
+    listBtn.onclick = () => {
+      wordListContainer.innerHTML = "";
+      quizWords.forEach((w, i) => {
+        const li = document.createElement("li");
+        li.textContent = `${i + 1}. ${w.word} - ${w.meaning}`;
+        wordListContainer.appendChild(li);
+      });
+      wordListDialog.showModal();
     };
   </script>
 </body>
