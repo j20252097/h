@@ -94,12 +94,10 @@
     const wordListDialog = document.getElementById("wordListDialog");
     const wordListContainer = document.getElementById("wordListContainer");
 
-    // シャッフル
     function shuffle(array) {
       return array.sort(() => Math.random() - 0.5);
     }
 
-    // 問題読み込み
     function loadQuestion() {
       if (currentIndex >= quizWords.length) {
         questionEl.textContent = "🎉 全ての問題が終了しました！お疲れさまでした。";
@@ -108,22 +106,17 @@
         nextBtn.style.display = "none";
         return;
       }
-
       feedbackEl.textContent = "";
       nextBtn.style.display = "none";
       optionsEl.innerHTML = "";
-
       currentWord = quizWords[currentIndex];
       questionEl.textContent = `第${currentIndex + 1}問: 「${currentWord.meaning}」に当てはまる英単語は？`;
-
-      // 選択肢作成
       let options = [currentWord];
       while (options.length < 4) {
         const rand = wordList[Math.floor(Math.random() * wordList.length)];
         if (!options.includes(rand)) options.push(rand);
       }
       shuffle(options);
-
       options.forEach(opt => {
         const btn = document.createElement("button");
         btn.className = "option";
@@ -133,10 +126,8 @@
       });
     }
 
-    // 答えチェック
     function checkAnswer(button, choice) {
       document.querySelectorAll(".option").forEach(b => b.disabled = true);
-
       if (choice.id === currentWord.id) {
         button.classList.add("correct");
         feedbackEl.textContent = "✅ 正解！";
@@ -149,13 +140,8 @@
       nextBtn.style.display = "inline-block";
     }
 
-    // 次の問題
-    nextBtn.onclick = () => {
-      currentIndex++;
-      loadQuestion();
-    };
+    nextBtn.onclick = () => { currentIndex++; loadQuestion(); };
 
-    // 間違い保存
     function saveMistake(word) {
       let mistakes = JSON.parse(localStorage.getItem("mistakes") || "[]");
       if (!mistakes.find(w => w.id === word.id)) {
@@ -164,19 +150,17 @@
       }
     }
 
-    // 正解したらmistakesから削除
     function removeMistake(word) {
       let mistakes = JSON.parse(localStorage.getItem("mistakes") || "[]");
       mistakes = mistakes.filter(w => w.id !== word.id);
       localStorage.setItem("mistakes", JSON.stringify(mistakes));
     }
 
-    // 範囲選択で問題セット
     function selectRange(value) {
       if (customStart.value && customEnd.value) {
         let start = Number(customStart.value);
         let end = Number(customEnd.value);
-        return wordList.filter((_, i) => i + 1 >= start && i + 1 <= end);
+        return wordList.filter(w => w.id >= start && w.id <= end);
       }
       if (value === "mistakes") {
         return JSON.parse(localStorage.getItem("mistakes") || "[]");
@@ -189,12 +173,11 @@
       }
       if (value.includes("-")) {
         let [start, end] = value.split("-").map(Number);
-        return wordList.filter((_, i) => i + 1 >= start && i + 1 <= end);
+        return wordList.filter(w => w.id >= start && w.id <= end);
       }
       return [];
     }
 
-    // スタートボタン
     startBtn.onclick = async () => {
       try {
         const res = await fetch("English-word.json");
@@ -212,23 +195,19 @@
       }
     };
 
-    // 単語一覧表示（単語は最初は隠す → クリックで表示切替）
+    // 単語一覧
     listBtn.onclick = () => {
       wordListContainer.innerHTML = "";
       quizWords.forEach((w, i) => {
         const li = document.createElement("li");
-
         const wordSpan = document.createElement("span");
         wordSpan.textContent = "???";
         wordSpan.classList.add("hidden-word");
-
         const meaningSpan = document.createElement("span");
         meaningSpan.textContent = ` - ${w.meaning}`;
-
-        li.appendChild(document.createTextNode(`${i + 1}. `));
+        li.appendChild(document.createTextNode(`${w.id}. `));
         li.appendChild(wordSpan);
         li.appendChild(meaningSpan);
-
         li.onclick = () => {
           if (wordSpan.textContent === "???") {
             wordSpan.textContent = w.word;
@@ -238,7 +217,6 @@
             wordSpan.classList.add("hidden-word");
           }
         };
-
         wordListContainer.appendChild(li);
       });
       wordListDialog.showModal();
