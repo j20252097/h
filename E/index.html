@@ -26,11 +26,47 @@
     @keyframes shake {
       0%,100%{transform:translateX(0);}25%{transform:translateX(-5px);}75%{transform:translateX(5px);}
     }
-    dialog { background:#1e1e1e; color:#fff; border-radius:10px; padding:1rem; }
-    dialog h3 { margin-top:0; }
-    dialog ul { max-height:300px; overflow-y:auto; text-align:left; padding:0; list-style:none; }
-    dialog ul li { padding:6px 0; border-bottom:1px solid #333; cursor:pointer; }
+
+    /* モーダル用スタイル */
+    #wordListModal {
+      display:none;
+      position:fixed;
+      top:0; left:0; width:100%; height:100%;
+      background:rgba(0,0,0,0.8);
+      justify-content:center;
+      align-items:center;
+      z-index:1000;
+    }
+    #wordListModal .modal-content {
+      background:#1e1e1e;
+      color:#fff;
+      padding:1.5rem;
+      border-radius:10px;
+      max-height:80%;
+      overflow-y:auto;
+      width:90%;
+      max-width:600px;
+    }
+    #wordListModal h3 { margin-top:0; }
+    #wordListContainer {
+      list-style:none;
+      padding:0;
+      margin:0;
+    }
+    #wordListContainer li {
+      padding:6px 0;
+      border-bottom:1px solid #333;
+      cursor:pointer;
+    }
     .hidden-word { color:#888; font-style:italic; }
+    .close-btn {
+      margin-top:1rem;
+      background:#e22134;
+      border:none;
+      padding:0.5rem 1rem;
+      border-radius:6px;
+      cursor:pointer;
+    }
   </style>
 </head>
 <body>
@@ -70,11 +106,13 @@
   </main>
 
   <!-- 単語一覧モーダル -->
-  <dialog id="wordListDialog">
-    <h3>単語一覧（クリックで単語の表示／非表示切替）</h3>
-    <ul id="wordListContainer"></ul>
-    <button onclick="document.getElementById('wordListDialog').close()">閉じる</button>
-  </dialog>
+  <div id="wordListModal">
+    <div class="modal-content">
+      <h3>単語一覧（クリックで表示／非表示切替）</h3>
+      <ul id="wordListContainer"></ul>
+      <button class="close-btn" onclick="closeWordList()">閉じる</button>
+    </div>
+  </div>
 
   <script>
     let wordList = [];
@@ -91,13 +129,15 @@
     const customStart = document.getElementById("customStart");
     const customEnd = document.getElementById("customEnd");
     const listBtn = document.getElementById("listBtn");
-    const wordListDialog = document.getElementById("wordListDialog");
+    const wordListModal = document.getElementById("wordListModal");
     const wordListContainer = document.getElementById("wordListContainer");
 
+    // シャッフル
     function shuffle(array) {
       return array.sort(() => Math.random() - 0.5);
     }
 
+    // 問題読み込み
     function loadQuestion() {
       if (currentIndex >= quizWords.length) {
         questionEl.textContent = "🎉 全ての問題が終了しました！お疲れさまでした。";
@@ -106,17 +146,22 @@
         nextBtn.style.display = "none";
         return;
       }
+
       feedbackEl.textContent = "";
       nextBtn.style.display = "none";
       optionsEl.innerHTML = "";
+
       currentWord = quizWords[currentIndex];
       questionEl.textContent = `第${currentIndex + 1}問: 「${currentWord.meaning}」に当てはまる英単語は？`;
+
+      // 選択肢作成
       let options = [currentWord];
       while (options.length < 4) {
         const rand = wordList[Math.floor(Math.random() * wordList.length)];
         if (!options.includes(rand)) options.push(rand);
       }
       shuffle(options);
+
       options.forEach(opt => {
         const btn = document.createElement("button");
         btn.className = "option";
@@ -126,8 +171,10 @@
       });
     }
 
+    // 答えチェック
     function checkAnswer(button, choice) {
       document.querySelectorAll(".option").forEach(b => b.disabled = true);
+
       if (choice.id === currentWord.id) {
         button.classList.add("correct");
         feedbackEl.textContent = "✅ 正解！";
@@ -140,8 +187,13 @@
       nextBtn.style.display = "inline-block";
     }
 
-    nextBtn.onclick = () => { currentIndex++; loadQuestion(); };
+    // 次の問題
+    nextBtn.onclick = () => {
+      currentIndex++;
+      loadQuestion();
+    };
 
+    // 間違い保存
     function saveMistake(word) {
       let mistakes = JSON.parse(localStorage.getItem("mistakes") || "[]");
       if (!mistakes.find(w => w.id === word.id)) {
@@ -150,17 +202,19 @@
       }
     }
 
+    // 正解したらmistakesから削除
     function removeMistake(word) {
       let mistakes = JSON.parse(localStorage.getItem("mistakes") || "[]");
       mistakes = mistakes.filter(w => w.id !== word.id);
       localStorage.setItem("mistakes", JSON.stringify(mistakes));
     }
 
+    // 範囲選択で問題セット
     function selectRange(value) {
       if (customStart.value && customEnd.value) {
         let start = Number(customStart.value);
         let end = Number(customEnd.value);
-        return wordList.filter(w => w.id >= start && w.id <= end);
+        return wordList.filter((_, i) => i + 1 >= start && i + 1 <= end);
       }
       if (value === "mistakes") {
         return JSON.parse(localStorage.getItem("mistakes") || "[]");
@@ -173,11 +227,12 @@
       }
       if (value.includes("-")) {
         let [start, end] = value.split("-").map(Number);
-        return wordList.filter(w => w.id >= start && w.id <= end);
+        return wordList.filter((_, i) => i + 1 >= start && i + 1 <= end);
       }
       return [];
     }
 
+    // スタートボタン
     startBtn.onclick = async () => {
       try {
         const res = await fetch("English-word.json");
@@ -195,10 +250,14 @@
       }
     };
 
-    // 単語一覧 (単語は最初隠しておいて、クリックで表示/非表示切替)
-    listBtn.onclick = () => {
+    // 単語一覧表示（常に全単語）
+    listBtn.onclick = async () => {
+      if (wordList.length === 0) {
+        const res = await fetch("English-word.json");
+        wordList = await res.json();
+      }
       wordListContainer.innerHTML = "";
-      quizWords.forEach((w) => {
+      wordList.forEach((w) => {
         const li = document.createElement("li");
 
         const wordSpan = document.createElement("span");
@@ -224,8 +283,13 @@
 
         wordListContainer.appendChild(li);
       });
-      wordListDialog.showModal();
+      wordListModal.style.display = "flex";
     };
+
+    // モーダルを閉じる
+    function closeWordList() {
+      wordListModal.style.display = "none";
+    }
   </script>
 </body>
 </html>
