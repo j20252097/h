@@ -195,19 +195,23 @@
       }
     };
 
-    // 単語一覧
+    // 単語一覧 (単語は最初隠しておいて、クリックで表示/非表示切替)
     listBtn.onclick = () => {
       wordListContainer.innerHTML = "";
-      quizWords.forEach((w, i) => {
+      quizWords.forEach((w) => {
         const li = document.createElement("li");
+
         const wordSpan = document.createElement("span");
         wordSpan.textContent = "???";
         wordSpan.classList.add("hidden-word");
+
         const meaningSpan = document.createElement("span");
         meaningSpan.textContent = ` - ${w.meaning}`;
+
         li.appendChild(document.createTextNode(`${w.id}. `));
         li.appendChild(wordSpan);
         li.appendChild(meaningSpan);
+
         li.onclick = () => {
           if (wordSpan.textContent === "???") {
             wordSpan.textContent = w.word;
@@ -217,6 +221,7 @@
             wordSpan.classList.add("hidden-word");
           }
         };
+
         wordListContainer.appendChild(li);
       });
       wordListDialog.showModal();
