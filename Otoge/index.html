@@ -2,8 +2,8 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>リズムタップゲーム（タイミング版）</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>4レーン横画面リズムゲーム</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css">
 
   <style>
@@ -11,57 +11,78 @@
       background: #111;
       color: #fff;
       text-align: center;
+      margin: 0;
+      padding: 0;
       overflow: hidden;
     }
     nav {
       background: #222;
     }
     main.container {
-      margin-top: 2rem;
+      margin-top: 1rem;
     }
     #gameArea {
       position: relative;
       margin: 0 auto;
-      width: 300px;
-      height: 500px;
+      width: 95vw;
+      max-width: 900px;
+      height: 75vh;
       border: 2px solid #fff;
       background: #000;
+      display: flex;
+      justify-content: space-between;
       overflow: hidden;
+      user-select: none;
+    }
+    .lane {
+      position: relative;
+      flex: 1;
+      border-left: 1px solid #333;
+      border-right: 1px solid #333;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+    }
+    .lane:active {
+      background: rgba(255,255,255,0.1);
     }
     .tile {
       position: absolute;
       top: -100px;
-      left: 0;
       width: 100%;
-      height: 100px;
+      height: 80px;
       background: #0af;
       border-radius: 5px;
     }
     #hitLine {
       position: absolute;
-      bottom: 50px;
+      bottom: 80px;
       left: 0;
       width: 100%;
       height: 5px;
       background: red;
     }
     #scoreBoard {
-      margin-top: 1rem;
+      margin-top: 0.5rem;
       font-size: 1.5rem;
     }
     #judgement {
       font-size: 2rem;
-      margin-top: 1rem;
+      margin-top: 0.5rem;
       height: 2.5rem;
     }
     #controls {
       margin: 1rem 0;
     }
+    #restartBtn {
+      display: none;
+      margin-top: 1rem;
+    }
   </style>
 </head>
 <body>
   <nav class="container-fluid">
-    <ul><li><strong>リズムタップゲーム</strong></li></ul>
+    <ul><li><strong>4レーン音ゲー</strong></li></ul>
     <ul>
       <li><a href="#">ホーム</a></li>
       <li><a href="#">遊び方</a></li>
@@ -70,34 +91,27 @@
   </nav>
 
   <main class="container">
-    <div class="grid">
-      <section>
-        <hgroup>
-          <h2>タイミング音ゲー</h2>
-          <h3>落ちてくるタイルを叩け！</h3>
-        </hgroup>
-        <div id="controls">
-          <label for="speed">落下速度を選択：</label>
-          <select id="speed">
-            <option value="slow">遅い</option>
-            <option value="normal" selected>普通</option>
-            <option value="fast">速い</option>
-          </select>
-        </div>
-        <div id="gameArea">
-          <div id="hitLine"></div>
-        </div>
-        <div id="scoreBoard">Score: 0</div>
-        <div id="judgement"></div>
-        <p>操作方法：スペースキー または クリックで判定</p>
-      </section>
+    <div id="controls">
+      <label for="speed">落下速度 (1-10)：</label>
+      <input type="number" id="speed" min="1" max="10" value="5">
     </div>
+    <div id="gameArea">
+      <div class="lane" id="lane1"></div>
+      <div class="lane" id="lane2"></div>
+      <div class="lane" id="lane3"></div>
+      <div class="lane" id="lane4"></div>
+      <div id="hitLine"></div>
+    </div>
+    <div id="scoreBoard">Score: 0</div>
+    <div id="judgement"></div>
+    <button id="restartBtn">再スタート</button>
+    <p>操作方法：  
+      Q = 左1 / W = 左2 / O = 右3 / P = 右4  
+      （スマホはレーンをタップ）</p>
   </main>
 
   <footer class="container">
-    <small>
-      <a href="#">利用規約</a> • <a href="#">プライバシー</a>
-    </small>
+    <small><a href="#">利用規約</a> • <a href="#">プライバシー</a></small>
   </footer>
 
   <script>
@@ -105,101 +119,129 @@
     const scoreBoard = document.getElementById("scoreBoard");
     const judgement = document.getElementById("judgement");
     const startBtn = document.getElementById("startBtn");
-    const speedSelect = document.getElementById("speed");
+    const restartBtn = document.getElementById("restartBtn");
+    const speedInput = document.getElementById("speed");
 
     let score = 0;
     let tiles = [];
-    let noteIndex = 0;
     let gameStarted = false;
-    let fallSpeed = 30; // msごとの落下間隔
-    let fallStep = 5;   // 1ステップの落下量
+    let fallSpeed = 30;
+    let fallStep = 5;
+    let spawnTimer = null;
+    let gameTimer = null;
+    const gameDuration = 60000; // ゲーム長さ 60秒
 
-    // タイミングデータ（秒単位のシンプルな譜面）
-    const notes = [1, 2, 3.5, 5, 6.2, 7.5, 9, 10.5, 12];
-
+    // タイル生成
     function spawnTile() {
+      const laneNum = Math.floor(Math.random() * 4) + 1;
+      const lane = document.getElementById("lane" + laneNum);
       const tile = document.createElement("div");
       tile.classList.add("tile");
-      tile.style.top = "-100px";
-      gameArea.appendChild(tile);
+      tile.dataset.lane = laneNum;
+      lane.appendChild(tile);
       tiles.push(tile);
 
-      let pos = -100;
+      let pos = -80;
       const fall = setInterval(() => {
         pos += fallStep;
         tile.style.top = pos + "px";
-        if (pos > 500) {
+        if (pos > gameArea.offsetHeight) {
           clearInterval(fall);
-          if (gameArea.contains(tile)) {
-            gameArea.removeChild(tile);
-            tiles.shift();
-            showJudgement("Miss");
+          if (lane.contains(tile)) {
+            lane.removeChild(tile);
+            tiles = tiles.filter(t => t !== tile);
+            showJudgement("Miss", 0);
           }
         }
       }, fallSpeed);
     }
 
-    function checkHit() {
+    // 判定処理
+    function checkHit(laneNum) {
       if (tiles.length > 0) {
-        const tile = tiles[0];
-        const tileBottom = parseInt(tile.style.top) + 100;
-        if (tileBottom >= 450 && tileBottom <= 500) {
-          score += 100;
+        const tile = tiles.find(t => parseInt(t.dataset.lane) === laneNum);
+        if (tile) {
+          const tileBottom = parseInt(tile.style.top) + 80;
+          const lineY = gameArea.offsetHeight - 80;
+          const diff = Math.abs(tileBottom - lineY);
+
+          if (diff < 15) {
+            score += 300;
+            showJudgement("Perfect!", 300);
+          } else if (diff < 30) {
+            score += 200;
+            showJudgement("Great!", 200);
+          } else if (diff < 50) {
+            score += 100;
+            showJudgement("Good", 100);
+          } else {
+            showJudgement("Miss", 0);
+            return;
+          }
+
+          tile.parentNode.removeChild(tile);
+          tiles = tiles.filter(t => t !== tile);
           scoreBoard.textContent = "Score: " + score;
-          showJudgement("Perfect!");
-          gameArea.removeChild(tile);
-          tiles.shift();
-        } else {
-          showJudgement("Miss");
         }
       }
     }
 
-    function showJudgement(text) {
-      judgement.textContent = text;
+    // 判定表示
+    function showJudgement(text, pts) {
+      judgement.textContent = text + (pts ? " +" + pts : "");
       setTimeout(() => judgement.textContent = "", 500);
     }
 
+    // ゲーム開始
     function startGame() {
       if (gameStarted) return;
       gameStarted = true;
       score = 0;
       scoreBoard.textContent = "Score: 0";
-      noteIndex = 0;
+      tiles = [];
+      restartBtn.style.display = "none";
 
-      // 選択された速度に応じて落下スピードを調整
-      const speed = speedSelect.value;
-      if (speed === "slow") {
-        fallSpeed = 40; fallStep = 4;
-      } else if (speed === "normal") {
-        fallSpeed = 30; fallStep = 5;
-      } else if (speed === "fast") {
-        fallSpeed = 20; fallStep = 6;
-      }
+      const speedLevel = parseInt(speedInput.value);
+      fallSpeed = Math.max(10, 50 - speedLevel * 4);
+      fallStep = 3 + speedLevel;
 
-      let startTime = Date.now();
-
-      // 譜面進行
-      const interval = setInterval(() => {
-        const currentTime = (Date.now() - startTime) / 1000; // 秒換算
-        if (noteIndex < notes.length && currentTime >= notes[noteIndex]) {
-          spawnTile();
-          noteIndex++;
-        }
-        if (noteIndex >= notes.length && tiles.length === 0) {
-          clearInterval(interval);
-          showJudgement("終了！");
-        }
-      }, 50);
+      spawnTimer = setInterval(spawnTile, 800); // 落下間隔短めでゲーム長め
+      gameTimer = setTimeout(endGame, gameDuration);
     }
 
+    // ゲーム終了
+    function endGame() {
+      clearInterval(spawnTimer);
+      gameStarted = false;
+      showJudgement("終了！", 0);
+      restartBtn.style.display = "inline-block";
+    }
+
+    // 再スタート
+    function restartGame() {
+      if (spawnTimer) clearInterval(spawnTimer);
+      if (gameTimer) clearTimeout(gameTimer);
+      score = 0;
+      tiles.forEach(t => t.remove());
+      tiles = [];
+      startGame();
+    }
+
+    // キー操作 (Q,W,O,P)
     document.body.addEventListener("keydown", e => {
-      if (e.code === "Space") {
-        checkHit();
-      }
+      if (e.key === "q" || e.key === "Q") checkHit(1);
+      if (e.key === "w" || e.key === "W") checkHit(2);
+      if (e.key === "o" || e.key === "O") checkHit(3);
+      if (e.key === "p" || e.key === "P") checkHit(4);
     });
-    gameArea.addEventListener("click", checkHit);
+
+    // スマホ対応（タップで判定）
+    document.querySelectorAll(".lane").forEach((lane, index) => {
+      lane.addEventListener("click", () => checkHit(index + 1));
+    });
+
     startBtn.addEventListener("click", startGame);
+    restartBtn.addEventListener("click", restartGame);
   </script>
 </body>
 </html>
