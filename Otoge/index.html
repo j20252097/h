@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>リズムタップゲーム（曲付き）</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css">
+
+  <style>
+    body {
+      background: #111;
+      color: #fff;
+      text-align: center;
+      overflow: hidden;
+    }
+    nav {
+      background: #222;
+    }
+    main.container {
+      margin-top: 2rem;
+    }
+    #gameArea {
+      position: relative;
+      margin: 0 auto;
+      width: 300px;
+      height: 500px;
+      border: 2px solid #fff;
+      background: #000;
+      overflow: hidden;
+    }
+    .tile {
+      position: absolute;
+      top: -100px;
+      left: 0;
+      width: 100%;
+      height: 100px;
+      background: #0af;
+      border-radius: 5px;
+    }
+    #hitLine {
+      position: absolute;
+      bottom: 50px;
+      left: 0;
+      width: 100%;
+      height: 5px;
+      background: red;
+    }
+    #scoreBoard {
+      margin-top: 1rem;
+      font-size: 1.5rem;
+    }
+    #judgement {
+      font-size: 2rem;
+      margin-top: 1rem;
+      height: 2.5rem;
+    }
+  </style>
+</head>
+<body>
+  <nav class="container-fluid">
+    <ul><li><strong>リズムタップゲーム</strong></li></ul>
+    <ul>
+      <li><a href="#">ホーム</a></li>
+      <li><a href="#">遊び方</a></li>
+      <li><a href="#" role="button" id="startBtn">スタート</a></li>
+    </ul>
+  </nav>
+
+  <main class="container">
+    <div class="grid">
+      <section>
+        <hgroup>
+          <h2>曲込み音ゲー</h2>
+          <h3>曲に合わせてタイルを叩こう！</h3>
+        </hgroup>
+        <audio id="music" src="music.mp3"></audio>
+        <div id="gameArea">
+          <div id="hitLine"></div>
+        </div>
+        <div id="scoreBoard">Score: 0</div>
+        <div id="judgement"></div>
+        <p>操作方法：スペースキー または クリックで判定</p>
+      </section>
+    </div>
+  </main>
+
+  <section aria-label="Subscribe example">
+    <div class="container">
+      <article>
+        <hgroup>
+          <h2>アップデート通知</h2>
+          <h3>新曲や新機能をお知らせします</h3>
+        </hgroup>
+        <form class="grid">
+          <input type="text" id="firstname" name="firstname" placeholder="お名前" aria-label="First name" required />
+          <input type="email" id="email" name="email" placeholder="メールアドレス" aria-label="Email" required />
+          <button type="submit" onclick="event.preventDefault()">登録</button>
+        </form>
+      </article>
+    </div>
+  </section>
+
+  <footer class="container">
+    <small>
+      <a href="#">利用規約</a> • <a href="#">プライバシー</a>
+    </small>
+  </footer>
+
+  <script>
+    const gameArea = document.getElementById("gameArea");
+    const scoreBoard = document.getElementById("scoreBoard");
+    const judgement = document.getElementById("judgement");
+    const music = document.getElementById("music");
+    const startBtn = document.getElementById("startBtn");
+
+    let score = 0;
+    let tiles = [];
+    let noteIndex = 0;
+    let gameStarted = false;
+
+    // 🎵 譜面データ（秒数）
+    // 例えば 1秒, 2秒, 3.5秒, 5秒のタイミングでノーツが落ちてくる
+    const notes = [1, 2, 3.5, 5, 6.2, 7.5, 9];
+
+    function spawnTile() {
+      const tile = document.createElement("div");
+      tile.classList.add("tile");
+      tile.style.top = "-100px";
+      gameArea.appendChild(tile);
+      tiles.push(tile);
+
+      let pos = -100;
+      const fall = setInterval(() => {
+        pos += 5;
+        tile.style.top = pos + "px";
+        if (pos > 500) {
+          clearInterval(fall);
+          if (gameArea.contains(tile)) {
+            gameArea.removeChild(tile);
+            tiles.shift();
+            showJudgement("Miss");
+          }
+        }
+      }, 30);
+    }
+
+    function checkHit() {
+      if (tiles.length > 0) {
+        const tile = tiles[0];
+        const tileBottom = parseInt(tile.style.top) + 100;
+        if (tileBottom >= 450 && tileBottom <= 500) {
+          score += 100;
+          scoreBoard.textContent = "Score: " + score;
+          showJudgement("Perfect!");
+          gameArea.removeChild(tile);
+          tiles.shift();
+        } else {
+          showJudgement("Miss");
+        }
+      }
+    }
+
+    function showJudgement(text) {
+      judgement.textContent = text;
+      setTimeout(() => judgement.textContent = "", 500);
+    }
+
+    function startGame() {
+      if (gameStarted) return;
+      gameStarted = true;
+      score = 0;
+      scoreBoard.textContent = "Score: 0";
+      noteIndex = 0;
+
+      music.currentTime = 0;
+      music.play();
+
+      // 曲の進行に合わせてノーツ生成
+      const interval = setInterval(() => {
+        const currentTime = music.currentTime;
+        if (noteIndex < notes.length && currentTime >= notes[noteIndex]) {
+          spawnTile();
+          noteIndex++;
+        }
+        if (noteIndex >= notes.length && tiles.length === 0) {
+          clearInterval(interval);
+          showJudgement("終了！");
+        }
+      }, 50);
+    }
+
+    document.body.addEventListener("keydown", e => {
+      if (e.code === "Space") {
+        checkHit();
+      }
+    });
+    gameArea.addEventListener("click", checkHit);
+    startBtn.addEventListener("click", startGame);
+  </script>
+</body>
+</html>
