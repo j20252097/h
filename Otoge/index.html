@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>リズムタップゲーム（曲付き）</title>
+  <title>リズムタップゲーム（タイミング版）</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css">
 
@@ -54,6 +54,9 @@
       margin-top: 1rem;
       height: 2.5rem;
     }
+    #controls {
+      margin: 1rem 0;
+    }
   </style>
 </head>
 <body>
@@ -70,10 +73,17 @@
     <div class="grid">
       <section>
         <hgroup>
-          <h2>曲込み音ゲー</h2>
-          <h3>曲に合わせてタイルを叩こう！</h3>
+          <h2>タイミング音ゲー</h2>
+          <h3>落ちてくるタイルを叩け！</h3>
         </hgroup>
-        <audio id="music" src="Music/好きだから。／ 『ユイカ』【MV】.mp4"></audio>
+        <div id="controls">
+          <label for="speed">落下速度を選択：</label>
+          <select id="speed">
+            <option value="slow">遅い</option>
+            <option value="normal" selected>普通</option>
+            <option value="fast">速い</option>
+          </select>
+        </div>
         <div id="gameArea">
           <div id="hitLine"></div>
         </div>
@@ -83,22 +93,6 @@
       </section>
     </div>
   </main>
-
-  <section aria-label="Subscribe example">
-    <div class="container">
-      <article>
-        <hgroup>
-          <h2>アップデート通知</h2>
-          <h3>新曲や新機能をお知らせします</h3>
-        </hgroup>
-        <form class="grid">
-          <input type="text" id="firstname" name="firstname" placeholder="お名前" aria-label="First name" required />
-          <input type="email" id="email" name="email" placeholder="メールアドレス" aria-label="Email" required />
-          <button type="submit" onclick="event.preventDefault()">登録</button>
-        </form>
-      </article>
-    </div>
-  </section>
 
   <footer class="container">
     <small>
@@ -110,17 +104,18 @@
     const gameArea = document.getElementById("gameArea");
     const scoreBoard = document.getElementById("scoreBoard");
     const judgement = document.getElementById("judgement");
-    const music = document.getElementById("music");
     const startBtn = document.getElementById("startBtn");
+    const speedSelect = document.getElementById("speed");
 
     let score = 0;
     let tiles = [];
     let noteIndex = 0;
     let gameStarted = false;
+    let fallSpeed = 30; // msごとの落下間隔
+    let fallStep = 5;   // 1ステップの落下量
 
-    // 🎵 譜面データ（秒数）
-    // 例えば 1秒, 2秒, 3.5秒, 5秒のタイミングでノーツが落ちてくる
-    const notes = [1, 2, 3.5, 5, 6.2, 7.5, 9];
+    // タイミングデータ（秒単位のシンプルな譜面）
+    const notes = [1, 2, 3.5, 5, 6.2, 7.5, 9, 10.5, 12];
 
     function spawnTile() {
       const tile = document.createElement("div");
@@ -131,7 +126,7 @@
 
       let pos = -100;
       const fall = setInterval(() => {
-        pos += 5;
+        pos += fallStep;
         tile.style.top = pos + "px";
         if (pos > 500) {
           clearInterval(fall);
@@ -141,7 +136,7 @@
             showJudgement("Miss");
           }
         }
-      }, 30);
+      }, fallSpeed);
     }
 
     function checkHit() {
@@ -172,12 +167,21 @@
       scoreBoard.textContent = "Score: 0";
       noteIndex = 0;
 
-      music.currentTime = 0;
-      music.play();
+      // 選択された速度に応じて落下スピードを調整
+      const speed = speedSelect.value;
+      if (speed === "slow") {
+        fallSpeed = 40; fallStep = 4;
+      } else if (speed === "normal") {
+        fallSpeed = 30; fallStep = 5;
+      } else if (speed === "fast") {
+        fallSpeed = 20; fallStep = 6;
+      }
 
-      // 曲の進行に合わせてノーツ生成
+      let startTime = Date.now();
+
+      // 譜面進行
       const interval = setInterval(() => {
-        const currentTime = music.currentTime;
+        const currentTime = (Date.now() - startTime) / 1000; // 秒換算
         if (noteIndex < notes.length && currentTime >= notes[noteIndex]) {
           spawnTile();
           noteIndex++;
